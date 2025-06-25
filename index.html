@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boost Arena</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #1a1a1a;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    canvas {
+      border: 3px solid #333;
+      background: #2a4a2a;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    }
+
+    .controls {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .boost-bar {
+      width: 300px;
+      height: 20px;
+      border: 2px solid #333;
+      background: #111;
+      margin: 10px auto;
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .boost-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff4444, #ffaa44, #44ff44);
+      border-radius: 8px;
+      transition: width 0.1s ease;
+    }
+
+    .boost-text {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      line-height: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 1px 1px 2px black;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Boost Arena - Prototype</h1>
+
+  <canvas id="gameCanvas" width="700" height="400"></canvas>
+
+  <div class="boost-bar">
+    <div class="boost-fill" id="boostFill"></div>
+    <div class="boost-text" id="boostText">100%</div>
+  </div>
+
+  <div class="controls">
+    <p><strong>Controls:</strong></p>
+    <p>WASD - Move | SHIFT - Boost | SPACE - Hit Ball</p>
+    <p>Manage your boost wisely!</p>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+
+</html>
