@@ -57,11 +57,57 @@
       color: white;
       text-shadow: 1px 1px 2px black;
     }
+
+    .score-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .score-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0 20px;
+    }
+
+    .score-value {
+      font-size: 36px;
+      color: #44ff44;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .score-label {
+      font-size: 16px;
+      color: #aaa;
+      margin-top: 5px;
+    }
+
+    .score-separator {
+      font-size: 32px;
+      color: #666;
+      margin: 0 10px;
+    }
   </style>
 </head>
 
 <body>
   <h1>Boost Arena - Prototype</h1>
+
+  <div class="score-display">
+    <div class="score-item">
+      <span class="score-label">You</span>
+      <span class="score-value" id="playerScore">0</span>
+    </div>
+    <div class="score-separator">-</div>
+    <div class="score-item">
+      <span class="score-value" id="opponentScore">0</span>
+      <span class="score-label">AI</span>
+    </div>
+  </div>
 
   <canvas id="gameCanvas" width="700" height="400"></canvas>
 

@@ -3,6 +3,8 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const boostFill = document.getElementById('boostFill');
 const boostText = document.getElementById('boostText');
+const playerScoreElement = document.getElementById('playerScore');
+const opponentScoreElement = document.getElementById('opponentScore');
 
 // Game constants
 const PLAYER_SPEED = 1.5;
@@ -17,6 +19,8 @@ const BOOST_HIT_MULTIPLIER = 1.3; // Further reduced for controlled gameplay
 // Game state
 const keys = {};
 let gameRunning = true;
+let playerScore = 0;
+let opponentScore = 0;
 
 // Player object
 const player = {
@@ -221,6 +225,42 @@ function handlePlayerBallCollision() {
   }
 }
 
+// Check for goals
+function checkGoals() {
+  // Left goal (opponent scores)
+  if (ball.x <= goals.left.x + goals.left.width &&
+    ball.y >= goals.left.y &&
+    ball.y <= goals.left.y + goals.left.height) {
+    opponentScore++;
+    resetBall();
+    return true;
+  }
+
+  // Right goal (player scores)
+  if (ball.x >= goals.right.x &&
+    ball.y >= goals.right.y &&
+    ball.y <= goals.right.y + goals.right.height) {
+    playerScore++;
+    resetBall();
+    return true;
+  }
+
+  return false;
+}
+
+// Reset ball to center after goal
+function resetBall() {
+  ball.x = canvas.width / 2;
+  ball.y = canvas.height / 2;
+  ball.vx = 0;
+  ball.vy = 0;
+  ball.trail = [];
+
+  // Reset player position too
+  player.x = 100;
+  player.y = canvas.height / 2;
+}
+
 // Update ball physics
 function updateBall() {
   // Handle player collision first
@@ -233,6 +273,11 @@ function updateBall() {
   // Apply friction
   ball.vx *= BALL_FRICTION;
   ball.vy *= BALL_FRICTION;
+
+  // Check for goals before wall collisions
+  if (checkGoals()) {
+    return; // Ball was reset, skip other physics
+  }
 
   // Wall collisions
   if (ball.x - ball.radius <= 0 || ball.x + ball.radius >= canvas.width) {
@@ -417,6 +462,12 @@ function updateBoostUI() {
   boostText.textContent = percentage + '%';
 }
 
+// Update score display
+function updateScoreUI() {
+  playerScoreElement.textContent = playerScore;
+  opponentScoreElement.textContent = opponentScore;
+}
+
 // Main game loop
 function gameLoop() {
   if (!gameRunning) return;
@@ -426,6 +477,7 @@ function gameLoop() {
   updateBoostPads();
   render();
   updateBoostUI();
+  updateScoreUI();
 
   requestAnimationFrame(gameLoop);
 }
