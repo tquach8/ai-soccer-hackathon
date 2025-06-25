@@ -3,8 +3,16 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const boostFill = document.getElementById('boostFill');
 const boostText = document.getElementById('boostText');
-const playerScoreElement = document.getElementById('playerScore');
-const opponentScoreElement = document.getElementById('opponentScore');
+const leftTeamScoreElement = document.getElementById('leftTeamScore');
+const rightTeamScoreElement = document.getElementById('rightTeamScore');
+const leftTeamLabelElement = document.getElementById('leftTeamLabel');
+const rightTeamLabelElement = document.getElementById('rightTeamLabel');
+
+// Lobby elements
+const lobbyScreen = document.getElementById('lobbyScreen');
+const gameScreen = document.getElementById('gameScreen');
+const startGameBtn = document.getElementById('startGameBtn');
+const backToLobbyBtn = document.getElementById('backToLobbyBtn');
 
 // Game constants
 const PLAYER_SPEED = 1.5;
@@ -18,9 +26,17 @@ const BOOST_HIT_MULTIPLIER = 1.3; // Further reduced for controlled gameplay
 
 // Game state
 const keys = {};
-let gameRunning = true;
+let gameRunning = false; // Start with game stopped
+let gameState = 'lobby'; // 'lobby' or 'playing'
 let playerScore = 0;
 let opponentScore = 0;
+
+// Lobby state
+let teams = {
+  red: [],
+  blue: []
+};
+let currentPlayer = null;
 
 // Player object
 const player = {
@@ -257,8 +273,14 @@ function resetBall() {
   ball.trail = [];
 
   // Reset player position too
+  resetPlayer();
+}
+
+// Initialize/reset player
+function resetPlayer() {
   player.x = 100;
   player.y = canvas.height / 2;
+  player.boost = 100;
 }
 
 // Update ball physics
@@ -464,13 +486,117 @@ function updateBoostUI() {
 
 // Update score display
 function updateScoreUI() {
-  playerScoreElement.textContent = playerScore;
-  opponentScoreElement.textContent = opponentScore;
+  leftTeamScoreElement.textContent = playerScore;
+  rightTeamScoreElement.textContent = opponentScore;
+}
+
+// Lobby functions
+function initializeLobby() {
+  // Add click listeners to player slots
+  document.querySelectorAll('.player-slot').forEach(slot => {
+    slot.addEventListener('click', handleSlotClick);
+  });
+
+  // Add button listeners
+  startGameBtn.addEventListener('click', startGame);
+  backToLobbyBtn.addEventListener('click', backToLobby);
+
+  updateLobbyUI();
+}
+
+function handleSlotClick(event) {
+  const slot = event.currentTarget;
+  const team = slot.dataset.team;
+  const slotIndex = parseInt(slot.dataset.slot);
+
+  if (slot.classList.contains('empty')) {
+    // Join this team
+    const playerName = `Player ${teams.red.length + teams.blue.length + 1}`;
+    teams[team].push({ name: playerName, slot: slotIndex });
+    currentPlayer = { team, name: playerName };
+    updateLobbyUI();
+  } else {
+    // Leave this team (if it's the current player)
+    const playerInSlot = teams[team].find(p => p.slot === slotIndex);
+    if (playerInSlot && currentPlayer && playerInSlot.name === currentPlayer.name) {
+      teams[team] = teams[team].filter(p => p.slot !== slotIndex);
+      currentPlayer = null;
+      updateLobbyUI();
+    }
+  }
+}
+
+function updateLobbyUI() {
+  // Update all slots
+  document.querySelectorAll('.player-slot').forEach(slot => {
+    const team = slot.dataset.team;
+    const slotIndex = parseInt(slot.dataset.slot);
+    const player = teams[team].find(p => p.slot === slotIndex);
+
+    if (player) {
+      slot.classList.remove('empty');
+      slot.classList.add('filled');
+      slot.querySelector('.slot-text').textContent = player.name;
+    } else {
+      slot.classList.remove('filled');
+      slot.classList.add('empty');
+      slot.querySelector('.slot-text').textContent = 'Click to Join';
+    }
+  });
+
+  // Update start button
+  const hasPlayers = teams.red.length > 0 || teams.blue.length > 0;
+  startGameBtn.disabled = !hasPlayers;
+
+  const lobbyInfo = document.querySelector('.lobby-info');
+  if (hasPlayers) {
+    lobbyInfo.textContent = 'Ready to play!';
+  } else {
+    lobbyInfo.textContent = 'Select teams to begin playing!';
+  }
+}
+
+function startGame() {
+  gameState = 'playing';
+  gameRunning = true;
+
+  // Setup team colors and labels
+  leftTeamLabelElement.textContent = 'Red';
+  rightTeamLabelElement.textContent = 'Blue';
+
+  // Reset scores
+  playerScore = 0;
+  opponentScore = 0;
+
+  // Show game screen, hide lobby
+  lobbyScreen.style.display = 'none';
+  gameScreen.style.display = 'block';
+
+  // Reset game state
+  resetBall();
+  resetPlayer();
+
+  // Start game loop
+  gameLoop();
+}
+
+function backToLobby() {
+  gameState = 'lobby';
+  gameRunning = false;
+
+  // Show lobby screen, hide game
+  lobbyScreen.style.display = 'block';
+  gameScreen.style.display = 'none';
+}
+
+function showScreen(screenName) {
+  lobbyScreen.style.display = screenName === 'lobby' ? 'block' : 'none';
+  gameScreen.style.display = screenName === 'game' ? 'block' : 'none';
 }
 
 // Main game loop
 function gameLoop() {
-  if (!gameRunning) return;
+  if (!gameRunning || gameState !== 'playing') return;
 
   updatePlayer();
   updateBall();
@@ -482,7 +608,18 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// Start the game
-console.log('Boost Arena starting...');
-console.log('Controls: WASD to move, SHIFT to boost, SPACE to hit ball');
-gameLoop(); 
+// Initialize the game
+function init() {
+  console.log('Boost Arena starting...');
+  initializeLobby();
+
+  // Show lobby screen initially
+  showScreen('lobby');
+}
+
+// Start the initialization when page loads
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+} 
