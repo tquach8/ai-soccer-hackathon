@@ -6,13 +6,13 @@ const boostText = document.getElementById('boostText');
 
 // Game constants
 const PLAYER_SPEED = 1.5;
-const BOOST_SPEED = 3;
-const BALL_FRICTION = 0.99;
-const WALL_BOUNCE = 0.8;
+const BOOST_SPEED = 2.2; // Reduced from 3 - smaller advantage
+const BALL_FRICTION = 0.995; // Increased from 0.99 - ball slows down faster
+const WALL_BOUNCE = 0.3;
 const BOOST_DRAIN_RATE = 1; // per frame while boosting
 const BOOST_REGEN_RATE = 0.05; // per frame when not boosting (much slower)
-const HIT_FORCE = 4;
-const BOOST_HIT_MULTIPLIER = 1.8;
+const HIT_FORCE = 0.8; // Much gentler base hit force
+const BOOST_HIT_MULTIPLIER = 1.3; // Further reduced for controlled gameplay
 
 // Game state
 const keys = {};
@@ -113,9 +113,10 @@ function updatePlayer() {
   player.x += dx * speed;
   player.y += dy * speed;
 
-  // Keep player in bounds
-  player.x = clamp(player.x, player.radius, canvas.width - player.radius);
-  player.y = clamp(player.y, player.radius, canvas.height - player.radius);
+  // Keep player mostly in bounds (allow slight out-of-bounds movement)
+  const outOfBoundsBuffer = player.radius * 0.6; // Allow 60% of radius outside
+  player.x = clamp(player.x, -outOfBoundsBuffer, canvas.width + outOfBoundsBuffer);
+  player.y = clamp(player.y, -outOfBoundsBuffer, canvas.height + outOfBoundsBuffer);
 
   // Ball hitting
   if (keys[' ']) {
@@ -196,23 +197,23 @@ function handlePlayerBallCollision() {
     player.x -= separateX;
     player.y -= separateY;
 
-    // Calculate push force based on player movement (reduced for better dribbling)
-    let pushForce = 0.15;
+    // Minimal push force - ball should stick to player
+    let pushForce = 0.02;
     const isBoosting = keys['shift'] && player.boost > 0;
     if (isBoosting) {
-      pushForce = 0.4;
+      pushForce = 0.05;
     }
 
-    // Add player velocity influence (reduced)
+    // Add player velocity influence (minimal)
     let playerVx = 0, playerVy = 0;
     if (keys['a']) playerVx -= 1;
     if (keys['d']) playerVx += 1;
     if (keys['w']) playerVy -= 1;
     if (keys['s']) playerVy += 1;
 
-    // Apply gentle push force for dribbling control
-    ball.vx += Math.cos(angle) * pushForce + playerVx * 0.1;
-    ball.vy += Math.sin(angle) * pushForce + playerVy * 0.1;
+    // Apply minimal force - ball should follow player movement
+    ball.vx += Math.cos(angle) * pushForce + playerVx * 0.02;
+    ball.vy += Math.sin(angle) * pushForce + playerVy * 0.02;
 
     // Keep player in bounds after collision
     player.x = clamp(player.x, player.radius, canvas.width - player.radius);
