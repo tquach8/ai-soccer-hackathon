@@ -1,11 +1,14 @@
 {
-  "name": "boost-arena-multiplayer",
+  "name": "blitz-ball-multiplayer",
   "version": "1.0.0",
   "description": "Multiplayer Blitz Ball game with real-time networking",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "socket.io": "^4.7.4",
