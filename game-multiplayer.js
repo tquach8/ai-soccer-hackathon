@@ -104,13 +104,10 @@ const playerNameInput = document.getElementById('playerNameInput');
 
 // Lobby browser elements
 const lobbyList = document.getElementById('lobbyList');
-const refreshLobbiesBtn = document.getElementById('refreshLobbiesBtn');
 
 // Leaderboard elements
 const leaderboardList = document.getElementById('leaderboardList');
 const mainLeaderboardList = document.getElementById('mainLeaderboardList');
-const refreshLeaderboardBtn = document.getElementById('refreshLeaderboardBtn');
-const mainRefreshLeaderboardBtn = document.getElementById('mainRefreshLeaderboardBtn');
 
 // Lobby elements
 const startGameBtn = document.getElementById('startGameBtn');
@@ -952,13 +949,17 @@ function predictLocalPlayer() {
 
 // Render loop
 function renderLoop() {
-  if (gameState.gameState === 'playing') {
+  // Only continue render loop if we're actually in a playing game AND game screen is visible
+  const gameScreenVisible = gameScreen.style.display === 'block';
+
+  if (gameState.gameState === 'playing' && gameScreenVisible) {
     predictLocalPlayer(); // Predict movement for smooth controls
   }
 
   render();
 
-  if (gameState.gameState === 'playing') {
+  // Continue render loop only if game is playing AND game screen is visible
+  if (gameState.gameState === 'playing' && gameScreenVisible) {
     requestAnimationFrame(renderLoop);
   }
 }
@@ -1084,11 +1085,6 @@ function updateLeaderboardDisplay(leaderboard) {
 // Main menu functions
 function initializeMainMenu() {
   createRoomBtn.addEventListener('click', handleCreateRoom);
-  refreshLobbiesBtn.addEventListener('click', requestLobbyList);
-  refreshLeaderboardBtn.addEventListener('click', fetchLeaderboard);
-  if (mainRefreshLeaderboardBtn) {
-    mainRefreshLeaderboardBtn.addEventListener('click', fetchLeaderboard);
-  }
 
   // Enter key handlers for inputs
   roomNameInput.addEventListener('keypress', (e) => {

@@ -889,28 +889,6 @@
       font-size: 16px;
     }
 
-    .refresh-btn {
-      width: 100%;
-      padding: 15px;
-      font-size: 16px;
-      background: linear-gradient(45deg, #00ffff, #ff00ff);
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 900;
-      transition: all 0.3s ease;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
-    }
-
-    .refresh-btn:hover {
-      background: linear-gradient(45deg, #ff00ff, #00ffff);
-      transform: translateY(-2px);
-      box-shadow: 0 5px 30px rgba(255, 0, 255, 0.5);
-    }
-
     /* Authentication Styles */
     .auth-screen {
       max-width: 450px;
@@ -1240,7 +1218,6 @@
         <div class="leaderboard-list" id="leaderboardList">
           <div class="no-leaderboard">Loading...</div>
         </div>
-        <button id="refreshLeaderboardBtn" class="leaderboard-refresh">🔄 Refresh</button>
       </div>
     </div>
   </div>
@@ -1283,7 +1260,6 @@
         <div class="lobby-list" id="lobbyList">
           <div class="no-lobbies">No active lobbies</div>
         </div>
-        <button id="refreshLobbiesBtn" class="refresh-btn">🔄 Refresh</button>
       </div>
 
       <div class="leaderboard-section">
@@ -1291,7 +1267,6 @@
         <div class="leaderboard-list" id="mainLeaderboardList">
           <div class="no-leaderboard">Loading...</div>
         </div>
-        <button id="mainRefreshLeaderboardBtn" class="leaderboard-refresh">🔄 Refresh</button>
       </div>
     </div>
   </div>

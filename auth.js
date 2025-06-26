@@ -70,6 +70,9 @@ class AuthManager {
     this.userDisplay = document.getElementById('userDisplay');
     this.logoutBtn = document.getElementById('logoutBtn');
     this.mainMenuScreen = document.getElementById('mainMenuScreen');
+    this.lobbyScreen = document.getElementById('lobbyScreen');
+    this.gameScreen = document.getElementById('gameScreen');
+    this.winningScreen = document.getElementById('winningScreen');
     this.createRoomSection = document.getElementById('createRoomSection');
     this.loginPromptSection = document.getElementById('loginPromptSection');
     this.playerNameSection = document.querySelector('.player-name-section');
@@ -221,9 +224,25 @@ class AuthManager {
     this.isGuest = false;
     localStorage.removeItem('authToken');
 
+    // Hide user info
     this.userInfo.style.display = 'none';
+
+    // Hide ALL screens and show only auth screen
     this.mainMenuScreen.style.display = 'none';
+    this.lobbyScreen.style.display = 'none';
+    this.gameScreen.style.display = 'none';
+    this.winningScreen.style.display = 'none';
     this.authScreen.style.display = 'block';
+
+    // Leave room and disconnect from game if connected
+    if (typeof leaveRoom === 'function') {
+      leaveRoom();
+    }
+
+    // Reset game state
+    if (typeof gameState !== 'undefined') {
+      gameState.gameState = 'menu';
+    }
 
     // Hide authenticated features
     this.createRoomSection.style.display = 'none';
