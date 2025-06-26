@@ -12,6 +12,9 @@ class AuthManager {
     // Initially hide all lobby functionality
     this.hideAllLobbyFunctionality();
 
+    // Ensure we start in login mode with proper styling
+    this.updateModeDisplay();
+
     // Check if user is already logged in
     if (this.token) {
       this.verifyToken();
@@ -147,10 +150,11 @@ class AuthManager {
       const data = await response.json();
 
       if (response.ok) {
-        this.showMessage('Account created successfully! Please login.', 'success');
+        this.showMessage('🎉 Account created successfully! Please login with your new credentials.', 'success');
         this.toggleMode(); // Switch to login mode
         this.authUsername.value = username; // Pre-fill username
         this.authPassword.value = ''; // Clear password
+        this.authUsername.focus(); // Focus on username field
       } else {
         this.showMessage(data.error || 'Registration failed', 'error');
       }
@@ -266,16 +270,61 @@ class AuthManager {
   toggleMode() {
     this.isLoginMode = !this.isLoginMode;
 
+    const authScreenElement = document.querySelector('.auth-screen');
+
     if (this.isLoginMode) {
       this.authTitle.textContent = 'Welcome Back';
       this.authSubmitBtn.textContent = 'Login';
       this.authSwitchText.textContent = "Don't have an account?";
       this.authSwitchBtn.textContent = 'Register';
+
+      // Login mode styling - cyan theme
+      authScreenElement.classList.remove('register-mode');
+      authScreenElement.style.borderColor = '#00ffff';
+      authScreenElement.style.boxShadow = '0 0 40px rgba(0, 255, 255, 0.3)';
+      this.authTitle.style.color = '#00ffff';
+      this.authTitle.style.textShadow = '0 0 20px rgba(0, 255, 255, 0.8)';
+      this.authSubmitBtn.style.background = 'linear-gradient(45deg, #00ffff, #ff00ff)';
+      this.authSubmitBtn.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
+
+      // Reset hover effects for login mode
+      this.authSubmitBtn.onmouseenter = () => {
+        this.authSubmitBtn.style.background = 'linear-gradient(45deg, #ff00ff, #00ffff)';
+        this.authSubmitBtn.style.transform = 'translateY(-3px)';
+        this.authSubmitBtn.style.boxShadow = '0 8px 35px rgba(255, 0, 255, 0.6)';
+      };
+      this.authSubmitBtn.onmouseleave = () => {
+        this.authSubmitBtn.style.background = 'linear-gradient(45deg, #00ffff, #ff00ff)';
+        this.authSubmitBtn.style.transform = 'translateY(0)';
+        this.authSubmitBtn.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
+      };
+
     } else {
-      this.authTitle.textContent = 'Create Account';
-      this.authSubmitBtn.textContent = 'Register';
+      this.authTitle.textContent = '🎮 Create New Account';
+      this.authSubmitBtn.textContent = 'Create Account';
       this.authSwitchText.textContent = 'Already have an account?';
-      this.authSwitchBtn.textContent = 'Login';
+      this.authSwitchBtn.textContent = 'Back to Login';
+
+      // Register mode styling - green theme with indicator
+      authScreenElement.classList.add('register-mode');
+      authScreenElement.style.borderColor = '#00ff88';
+      authScreenElement.style.boxShadow = '0 0 40px rgba(0, 255, 136, 0.4)';
+      this.authTitle.style.color = '#00ff88';
+      this.authTitle.style.textShadow = '0 0 20px rgba(0, 255, 136, 0.8)';
+      this.authSubmitBtn.style.background = 'linear-gradient(45deg, #00ff88, #44ff44)';
+      this.authSubmitBtn.style.boxShadow = '0 0 25px rgba(0, 255, 136, 0.5)';
+
+      // Custom hover effects for register mode
+      this.authSubmitBtn.onmouseenter = () => {
+        this.authSubmitBtn.style.background = 'linear-gradient(45deg, #44ff44, #00ff88)';
+        this.authSubmitBtn.style.transform = 'translateY(-3px)';
+        this.authSubmitBtn.style.boxShadow = '0 8px 35px rgba(68, 255, 68, 0.6)';
+      };
+      this.authSubmitBtn.onmouseleave = () => {
+        this.authSubmitBtn.style.background = 'linear-gradient(45deg, #00ff88, #44ff44)';
+        this.authSubmitBtn.style.transform = 'translateY(0)';
+        this.authSubmitBtn.style.boxShadow = '0 0 25px rgba(0, 255, 136, 0.5)';
+      };
     }
 
     this.authMessage.innerHTML = '';
@@ -284,6 +333,26 @@ class AuthManager {
 
   showMessage(message, type) {
     this.authMessage.innerHTML = `<div class="${type}-message">${message}</div>`;
+  }
+
+  updateModeDisplay() {
+    // Ensure proper styling for the current mode on page load
+    const authScreenElement = document.querySelector('.auth-screen');
+    if (authScreenElement) {
+      if (this.isLoginMode) {
+        authScreenElement.classList.remove('register-mode');
+        authScreenElement.style.borderColor = '#00ffff';
+        authScreenElement.style.boxShadow = '0 0 40px rgba(0, 255, 255, 0.3)';
+        if (this.authTitle) {
+          this.authTitle.style.color = '#00ffff';
+          this.authTitle.style.textShadow = '0 0 20px rgba(0, 255, 255, 0.8)';
+        }
+        if (this.authSubmitBtn) {
+          this.authSubmitBtn.style.background = 'linear-gradient(45deg, #00ffff, #ff00ff)';
+          this.authSubmitBtn.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
+        }
+      }
+    }
   }
 
   continueAsGuest() {
