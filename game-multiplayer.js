@@ -8,6 +8,84 @@ const rightTeamScoreElement = document.getElementById('rightTeamScore');
 const leftTeamLabelElement = document.getElementById('leftTeamLabel');
 const rightTeamLabelElement = document.getElementById('rightTeamLabel');
 
+// Audio System
+let audioContext = null;
+let lastScores = { red: 0, blue: 0 }; // Track score changes
+let lastBallState = { x: 0, y: 0, vx: 0, vy: 0 }; // Track ball changes for kick detection
+
+// Initialize audio context (requires user interaction)
+function initAudio() {
+  if (!audioContext) {
+    try {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      console.log('Web Audio API not supported');
+    }
+  }
+}
+
+// Play kick sound
+function playKickSound() {
+  if (!audioContext) return;
+
+  try {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    // Kick sound: quick low frequency thump
+    oscillator.frequency.setValueAtTime(80, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(40, audioContext.currentTime + 0.1);
+
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+    oscillator.type = 'sine';
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.2);
+  } catch (e) {
+    console.log('Error playing kick sound:', e);
+  }
+}
+
+// Play goal sound
+function playGoalSound() {
+  if (!audioContext) return;
+
+  try {
+    // Create a celebratory ascending tone sequence
+    const playTone = (freq, startTime, duration) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.setValueAtTime(freq, startTime);
+      oscillator.type = 'sine';
+
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.05);
+      gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    };
+
+    // Goal celebration: ascending notes
+    const now = audioContext.currentTime;
+    playTone(440, now, 0.3);      // A4
+    playTone(554, now + 0.15, 0.3); // C#5  
+    playTone(659, now + 0.3, 0.4);  // E5
+    playTone(880, now + 0.5, 0.5);  // A5
+
+  } catch (e) {
+    console.log('Error playing goal sound:', e);
+  }
+}
+
 // Screen elements
 const mainMenuScreen = document.getElementById('mainMenuScreen');
 const lobbyScreen = document.getElementById('lobbyScreen');
@@ -348,6 +426,12 @@ document.addEventListener('keydown', (e) => {
   }
 
   const key = e.key.toLowerCase();
+
+  // Initialize audio on first user interaction
+  if (!audioContext) {
+    initAudio();
+  }
+
   keys[key] = true;
 
   // Prevent default browser behaviors for game keys
@@ -402,7 +486,59 @@ function updateClientGameState() {
     resizeCanvas(gameState.mapDimensions.width, gameState.mapDimensions.height);
   }
 
-  // Update scores
+  // Check for goal scored (score changed)
+  if (gameState.scores.red !== lastScores.red || gameState.scores.blue !== lastScores.blue) {
+    // Initialize audio if needed
+    if (!audioContext) {
+      initAudio();
+    }
+
+    // Play goal sound
+    playGoalSound();
+
+    // Update last scores
+    lastScores.red = gameState.scores.red;
+    lastScores.blue = gameState.scores.blue;
+  }
+
+  // Check for ball kick (velocity change + player proximity)
+  if (lastBallState.x !== 0 || lastBallState.y !== 0) { // Skip first update
+    const velocityChange = Math.sqrt(
+      Math.pow(gameState.ball.vx - lastBallState.vx, 2) +
+      Math.pow(gameState.ball.vy - lastBallState.vy, 2)
+    );
+
+    // If ball velocity changed significantly (indicating a kick)
+    if (velocityChange > 3) {
+      // Check if any player is close enough to the ball to have kicked it
+      const kickDistance = 35; // Maximum distance for a kick
+      const ballKicked = gameState.players.some(player => {
+        const distance = Math.sqrt(
+          Math.pow(player.x - gameState.ball.x, 2) +
+          Math.pow(player.y - gameState.ball.y, 2)
+        );
+        return distance < kickDistance;
+      });
+
+      if (ballKicked) {
+        // Initialize audio if needed
+        if (!audioContext) {
+          initAudio();
+        }
+        playKickSound();
+      }
+    }
+  }
+
+  // Update last ball state for next comparison
+  lastBallState = {
+    x: gameState.ball.x,
+    y: gameState.ball.y,
+    vx: gameState.ball.vx,
+    vy: gameState.ball.vy
+  };
+
+  // Update scores display
   leftTeamScoreElement.textContent = gameState.scores.red;
   rightTeamScoreElement.textContent = gameState.scores.blue;
 
