@@ -423,184 +423,430 @@ function render() {
   const mapHeight = gameState.mapDimensions ? gameState.mapDimensions.height : canvas.height;
   const goalHeight = gameState.goalHeight || 120;
 
-  // Clear canvas
-  ctx.fillStyle = '#2a4a2a';
+  // Clear canvas with cyber background
+  const time = Date.now() * 0.001; // For animations
+
+  // Create gradient background
+  const gradient = ctx.createRadialGradient(mapWidth / 2, mapHeight / 2, 0, mapWidth / 2, mapHeight / 2, Math.max(mapWidth, mapHeight) / 2);
+  gradient.addColorStop(0, '#0a1a2a');
+  gradient.addColorStop(0.7, '#0f2a3a');
+  gradient.addColorStop(1, '#051520');
+  ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw field lines
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([5, 5]);
+  // Draw cyber grid pattern
+  ctx.save();
+  ctx.strokeStyle = `rgba(0, 255, 255, ${0.15 + Math.sin(time * 2) * 0.05})`;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([]);
 
-  // Center line
+  const gridSize = 50;
+  ctx.beginPath();
+  // Vertical lines
+  for (let x = 0; x <= mapWidth; x += gridSize) {
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, mapHeight);
+  }
+  // Horizontal lines
+  for (let y = 0; y <= mapHeight; y += gridSize) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(mapWidth, y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // Add animated scan lines
+  ctx.save();
+  ctx.strokeStyle = `rgba(0, 255, 255, ${0.3 + Math.sin(time * 3) * 0.2})`;
+  ctx.lineWidth = 2;
+  const scanY = (time * 100) % (mapHeight + 100) - 50;
+  ctx.beginPath();
+  ctx.moveTo(0, scanY);
+  ctx.lineTo(mapWidth, scanY);
+  ctx.stroke();
+  ctx.restore();
+
+  // Draw cyber field boundary with glow
+  ctx.save();
+  ctx.strokeStyle = '#00ffff';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = '#00ffff';
+  ctx.shadowBlur = 15;
+  ctx.strokeRect(0, 0, mapWidth, mapHeight);
+  ctx.restore();
+
+  // Draw center line with neon effect
+  ctx.save();
+  ctx.strokeStyle = '#00ffff';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = '#00ffff';
+  ctx.shadowBlur = 10;
+  ctx.setLineDash([10, 5]);
   ctx.beginPath();
   ctx.moveTo(mapWidth / 2, 0);
   ctx.lineTo(mapWidth / 2, mapHeight);
   ctx.stroke();
+  ctx.restore();
 
-  // Center circle
+  // Draw center circle with cyber styling
+  ctx.save();
+  ctx.strokeStyle = '#ff00ff';
+  ctx.lineWidth = 4;
+  ctx.shadowColor = '#ff00ff';
+  ctx.shadowBlur = 15;
+  ctx.setLineDash([15, 8]);
   ctx.beginPath();
   ctx.arc(mapWidth / 2, mapHeight / 2, 80, 0, Math.PI * 2);
   ctx.stroke();
+  ctx.restore();
 
-  // Show kickoff restriction zone
+  // Add pulsing center circle fill
+  ctx.save();
+  ctx.fillStyle = `rgba(255, 0, 255, ${0.1 + Math.sin(time * 4) * 0.05})`;
+  ctx.beginPath();
+  ctx.arc(mapWidth / 2, mapHeight / 2, 80, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Show kickoff restriction zone with enhanced cyber effects
   if (gameState.kickoffActive && gameState.kickoffTeam) {
-    // Highlight the center circle with team color overlay
-    const kickoffColor = gameState.kickoffTeam === 'red' ? 'rgba(255, 68, 68, 0.15)' : 'rgba(68, 68, 255, 0.15)';
-    const kickoffBorderColor = gameState.kickoffTeam === 'red' ? '#ff4444' : '#4444ff';
+    const kickoffColor = gameState.kickoffTeam === 'red' ?
+      `rgba(255, 68, 68, ${0.2 + Math.sin(time * 6) * 0.1})` :
+      `rgba(68, 136, 255, ${0.2 + Math.sin(time * 6) * 0.1})`;
+    const kickoffBorderColor = gameState.kickoffTeam === 'red' ? '#ff4444' : '#4488ff';
 
+    ctx.save();
     ctx.fillStyle = kickoffColor;
     ctx.beginPath();
     ctx.arc(mapWidth / 2, mapHeight / 2, 80, 0, Math.PI * 2);
     ctx.fill();
 
-    // Add dashed border to make restriction clearer
+    // Animated border for restriction zone
     ctx.strokeStyle = kickoffBorderColor;
-    ctx.lineWidth = 3;
-    ctx.setLineDash([10, 5]);
+    ctx.lineWidth = 4;
+    ctx.shadowColor = kickoffBorderColor;
+    ctx.shadowBlur = 20;
+    ctx.setLineDash([15, 10]);
+    ctx.lineDashOffset = time * 30;
     ctx.beginPath();
     ctx.arc(mapWidth / 2, mapHeight / 2, 80, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.restore();
   }
 
-  ctx.setLineDash([]);
+  // Draw cyber goals with energy effects
+  function drawCyberGoal(x, y, width, height, isLeft) {
+    ctx.save();
 
-  // Draw goals using dynamic goal height
-  ctx.fillStyle = '#ff4444';
-  ctx.fillRect(0, mapHeight / 2 - goalHeight / 2, 20, goalHeight); // Left goal
-  ctx.fillRect(mapWidth - 20, mapHeight / 2 - goalHeight / 2, 20, goalHeight); // Right goal
+    // Goal base with gradient
+    const goalGradient = ctx.createLinearGradient(x, y, x + width, y);
+    goalGradient.addColorStop(0, isLeft ? '#ff0040' : '#ff0040');
+    goalGradient.addColorStop(0.5, '#ff4080');
+    goalGradient.addColorStop(1, '#ff0040');
+    ctx.fillStyle = goalGradient;
+    ctx.fillRect(x, y, width, height);
 
-  // Draw boost pads
-  gameState.boostPads.forEach(pad => {
-    if (pad.active) {
-      // Active boost pad - glowing green
-      ctx.fillStyle = '#44ff44';
-      ctx.shadowColor = '#44ff44';
-      ctx.shadowBlur = 15;
+    // Goal glow effect
+    ctx.shadowColor = '#ff0040';
+    ctx.shadowBlur = 25;
+    ctx.fillRect(x, y, width, height);
+
+    // Energy lines inside goal
+    ctx.strokeStyle = '#ffff00';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#ffff00';
+    ctx.shadowBlur = 10;
+
+    const numLines = 5;
+    for (let i = 1; i < numLines; i++) {
+      const lineY = y + (height / numLines) * i;
+      const offset = Math.sin(time * 4 + i) * 3;
       ctx.beginPath();
-      ctx.arc(pad.x, pad.y, 20, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      // Add "B" text
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 16px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('B', pad.x, pad.y + 5);
-    } else {
-      // Inactive boost pad - gray with cooldown
-      ctx.fillStyle = '#666666';
-      ctx.beginPath();
-      ctx.arc(pad.x, pad.y, 20, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Show cooldown progress
-      const progress = 1 - (pad.cooldown / pad.maxCooldown);
-      ctx.fillStyle = '#44ff44';
-      ctx.beginPath();
-      ctx.arc(pad.x, pad.y, 20, -Math.PI / 2, -Math.PI / 2 + (progress * Math.PI * 2));
-      ctx.lineTo(pad.x, pad.y);
-      ctx.fill();
-
-      // Add faded "B" text
-      ctx.fillStyle = '#333333';
-      ctx.font = 'bold 16px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('B', pad.x, pad.y + 5);
+      ctx.moveTo(x + offset, lineY);
+      ctx.lineTo(x + width + offset, lineY);
+      ctx.stroke();
     }
+
+    // Goal post highlights
+    ctx.strokeStyle = '#00ffff';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#00ffff';
+    ctx.shadowBlur = 15;
+    ctx.strokeRect(x, y, width, height);
+
+    ctx.restore();
+  }
+
+  // Draw goals
+  drawCyberGoal(0, mapHeight / 2 - goalHeight / 2, 20, goalHeight, true);
+  drawCyberGoal(mapWidth - 20, mapHeight / 2 - goalHeight / 2, 20, goalHeight, false);
+
+  // Draw cyber boost pads
+  gameState.boostPads.forEach((pad, index) => {
+    ctx.save();
+
+    if (pad.active) {
+      // Active boost pad with cyber effects
+      const pulseSize = 25 + Math.sin(time * 5 + index) * 5;
+
+      // Outer glow
+      ctx.shadowColor = '#00ff00';
+      ctx.shadowBlur = 30;
+      ctx.fillStyle = `rgba(0, 255, 0, ${0.3 + Math.sin(time * 3 + index) * 0.2})`;
+      ctx.beginPath();
+      ctx.arc(pad.x, pad.y, pulseSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner core
+      ctx.shadowBlur = 15;
+      ctx.fillStyle = '#00ff00';
+      ctx.beginPath();
+      ctx.arc(pad.x, pad.y, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Energy ring
+      ctx.strokeStyle = '#ffff00';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#ffff00';
+      ctx.shadowBlur = 10;
+      ctx.setLineDash([5, 5]);
+      ctx.lineDashOffset = time * 20;
+      ctx.beginPath();
+      ctx.arc(pad.x, pad.y, 22, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // "BOOST" text with glow
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 10px Orbitron, monospace';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = '#00ff00';
+      ctx.shadowBlur = 5;
+      ctx.fillText('BOOST', pad.x, pad.y - 2);
+      ctx.fillText('PAD', pad.x, pad.y + 8);
+
+    } else {
+      // Inactive boost pad with cooldown visual
+      ctx.fillStyle = '#333333';
+      ctx.beginPath();
+      ctx.arc(pad.x, pad.y, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cooldown progress ring
+      const progress = 1 - (pad.cooldown / pad.maxCooldown);
+      ctx.strokeStyle = '#00ff00';
+      ctx.lineWidth = 4;
+      ctx.shadowColor = '#00ff00';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(pad.x, pad.y, 22, -Math.PI / 2, -Math.PI / 2 + (progress * Math.PI * 2));
+      ctx.stroke();
+
+      // Dim text
+      ctx.fillStyle = '#666666';
+      ctx.font = 'bold 8px Orbitron, monospace';
+      ctx.textAlign = 'center';
+      ctx.shadowBlur = 0;
+      ctx.fillText('BOOST', pad.x, pad.y - 1);
+      ctx.fillText('PAD', pad.x, pad.y + 7);
+    }
+    ctx.restore();
   });
 
-  // Draw ball
-  ctx.fillStyle = '#ffffff';
+  // Draw cyber ball with energy trail
+  ctx.save();
+
+  // Ball energy aura
+  const ballSpeed = Math.sqrt(gameState.ball.vx ** 2 + gameState.ball.vy ** 2);
+  const energyRadius = 15 + Math.min(ballSpeed * 2, 20);
+
+  if (ballSpeed > 2) {
+    ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(ballSpeed * 0.1, 0.4)})`;
+    ctx.shadowColor = '#ffffff';
+    ctx.shadowBlur = 25;
+    ctx.beginPath();
+    ctx.arc(gameState.ball.x, gameState.ball.y, energyRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Main ball with gradient
+  const ballGradient = ctx.createRadialGradient(
+    gameState.ball.x - 5, gameState.ball.y - 5, 0,
+    gameState.ball.x, gameState.ball.y, gameState.ball.radius
+  );
+  ballGradient.addColorStop(0, '#ffffff');
+  ballGradient.addColorStop(0.7, '#cccccc');
+  ballGradient.addColorStop(1, '#888888');
+
+  ctx.fillStyle = ballGradient;
+  ctx.shadowColor = '#ffffff';
+  ctx.shadowBlur = 15;
   ctx.beginPath();
   ctx.arc(gameState.ball.x, gameState.ball.y, gameState.ball.radius, 0, Math.PI * 2);
   ctx.fill();
 
-  // Draw ball glow if moving fast
-  const ballSpeed = Math.sqrt(gameState.ball.vx ** 2 + gameState.ball.vy ** 2);
-  if (ballSpeed > 5) {
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.arc(gameState.ball.x, gameState.ball.y, gameState.ball.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  }
+  // Ball highlight
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowBlur = 5;
+  ctx.beginPath();
+  ctx.arc(gameState.ball.x - 3, gameState.ball.y - 3, gameState.ball.radius * 0.3, 0, Math.PI * 2);
+  ctx.fill();
 
-  // Draw players
+  ctx.restore();
+
+  // Draw cyber players
   gameState.players.forEach(player => {
     const isLocalPlayer = player.id === myPlayerId;
     const isKicking = isLocalPlayer && keys[' '];
-    // Check boost for all players based on their server state
     const isBoosting = (isLocalPlayer && keys['shift'] && player.boost > 0) ||
       (!isLocalPlayer && player.keys && player.keys.shift && player.boost > 0);
 
-    // Determine player color based on team
-    let playerColor = player.team === 'red' ? '#ff4444' : '#4444ff';
-    let shadowColor = null;
-    let shadowBlur = 0;
-    let strokeColor = null;
-    let strokeWidth = 0;
+    ctx.save();
+
+    // Player base color
+    let playerColor = player.team === 'red' ? '#ff4444' : '#4488ff';
+    let glowColor = playerColor;
+    let glowIntensity = 10;
 
     if (isKicking) {
-      // Kicking effect - bright white highlight
+      // Kicking effect - electric white
       playerColor = '#ffffff';
-      shadowColor = '#ff4444';
-      shadowBlur = 20;
-      strokeColor = '#ffff44';
-      strokeWidth = 4;
+      glowColor = '#ffff00';
+      glowIntensity = 30;
+
+      // Electric sparks around player
+      ctx.strokeStyle = '#ffff00';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#ffff00';
+      ctx.shadowBlur = 15;
+
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2 + time * 8;
+        const sparkLength = 15 + Math.random() * 10;
+        const startX = player.x + Math.cos(angle) * 25;
+        const startY = player.y + Math.sin(angle) * 25;
+        const endX = startX + Math.cos(angle + Math.random() - 0.5) * sparkLength;
+        const endY = startY + Math.sin(angle + Math.random() - 0.5) * sparkLength;
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+      }
+
     } else if (isBoosting) {
-      // Boosting effect - change player color to bright cyan and add glow
-      playerColor = '#00ffff'; // Bright cyan for boost
-      shadowColor = '#00ffff';
-      shadowBlur = 20;
-      strokeColor = '#ffffff';
-      strokeWidth = 2;
+      // Boosting effect - cyan energy
+      playerColor = '#00ffff';
+      glowColor = '#00ffff';
+      glowIntensity = 25;
+
+      // Boost trail particles
+      ctx.fillStyle = `rgba(0, 255, 255, ${0.5 + Math.sin(time * 10) * 0.3})`;
+      ctx.shadowColor = '#00ffff';
+      ctx.shadowBlur = 20;
+
+      for (let i = 0; i < 8; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 30 + Math.random() * 15;
+        const particleX = player.x + Math.cos(angle) * distance;
+        const particleY = player.y + Math.sin(angle) * distance;
+        const size = 2 + Math.random() * 3;
+
+        ctx.beginPath();
+        ctx.arc(particleX, particleY, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
-    // Apply shadow if needed
-    if (shadowColor) {
-      ctx.shadowColor = shadowColor;
-      ctx.shadowBlur = shadowBlur;
-    }
+    // Player glow aura
+    ctx.fillStyle = `rgba(${glowColor === '#ff4444' ? '255,68,68' :
+      glowColor === '#4488ff' ? '68,136,255' :
+        glowColor === '#00ffff' ? '0,255,255' : '255,255,255'}, 0.3)`;
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = glowIntensity;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, 25, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Draw player circle
-    ctx.fillStyle = playerColor;
+    // Main player body with gradient
+    const playerGradient = ctx.createRadialGradient(
+      player.x - 5, player.y - 5, 0,
+      player.x, player.y, 20
+    );
+    playerGradient.addColorStop(0, playerColor);
+    playerGradient.addColorStop(0.7, playerColor);
+    playerGradient.addColorStop(1, '#000000');
+
+    ctx.fillStyle = playerGradient;
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = glowIntensity;
     ctx.beginPath();
     ctx.arc(player.x, player.y, 20, 0, Math.PI * 2);
     ctx.fill();
 
-    // Draw stroke if kicking
-    if (strokeColor) {
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = strokeWidth;
-      ctx.beginPath();
-      ctx.arc(player.x, player.y, 20, 0, Math.PI * 2);
-      ctx.stroke();
-    }
+    // Player number/ID ring
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#ffffff';
+    ctx.shadowBlur = 5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, 23, 0, Math.PI * 2);
+    ctx.stroke();
 
-    // Reset shadow
-    ctx.shadowBlur = 0;
-
-    // Draw player name
+    // Player name with cyber styling
     ctx.fillStyle = '#ffffff';
-    ctx.font = '12px Arial';
+    ctx.font = 'bold 11px Orbitron, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(player.name, player.x, player.y - 30);
+    ctx.shadowColor = '#000000';
+    ctx.shadowBlur = 3;
+    ctx.fillText(player.name.toUpperCase(), player.x, player.y - 35);
 
-    // Draw direction indicator for local player
+    // Direction indicator for local player
     if (isLocalPlayer) {
-      ctx.strokeStyle = '#ffffff';
+      ctx.strokeStyle = '#ffff00';
       ctx.lineWidth = 3;
+      ctx.shadowColor = '#ffff00';
+      ctx.shadowBlur = 10;
+      ctx.setLineDash([]);
       ctx.beginPath();
-      const lookX = player.x + Math.cos(Math.atan2(gameState.ball.y - player.y, gameState.ball.x - player.x)) * 25;
-      const lookY = player.y + Math.sin(Math.atan2(gameState.ball.y - player.y, gameState.ball.x - player.x)) * 25;
+      const lookX = player.x + Math.cos(Math.atan2(gameState.ball.y - player.y, gameState.ball.x - player.x)) * 30;
+      const lookY = player.y + Math.sin(Math.atan2(gameState.ball.y - player.y, gameState.ball.x - player.x)) * 30;
       ctx.moveTo(player.x, player.y);
       ctx.lineTo(lookX, lookY);
       ctx.stroke();
+
+      // Arrow head
+      const angle = Math.atan2(gameState.ball.y - player.y, gameState.ball.x - player.x);
+      ctx.beginPath();
+      ctx.moveTo(lookX, lookY);
+      ctx.lineTo(lookX - 8 * Math.cos(angle - 0.3), lookY - 8 * Math.sin(angle - 0.3));
+      ctx.moveTo(lookX, lookY);
+      ctx.lineTo(lookX - 8 * Math.cos(angle + 0.3), lookY - 8 * Math.sin(angle + 0.3));
+      ctx.stroke();
     }
+
+    ctx.restore();
   });
+
+  // Add atmospheric effects
+  ctx.save();
+
+  // Floating energy particles
+  for (let i = 0; i < 12; i++) {
+    const x = (i * 100 + time * 20 + Math.sin(time + i) * 30) % (mapWidth + 100);
+    const y = (i * 50 + Math.cos(time * 0.5 + i) * 50) % (mapHeight + 50);
+    const size = 1 + Math.sin(time * 3 + i) * 0.5;
+    const alpha = 0.3 + Math.sin(time * 2 + i) * 0.2;
+
+    ctx.fillStyle = `rgba(0, 255, 255, ${alpha})`;
+    ctx.shadowColor = '#00ffff';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
 }
 
 // Client-side prediction for smooth movement
