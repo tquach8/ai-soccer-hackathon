@@ -30,6 +30,8 @@ const startGameBtn = document.getElementById('startGameBtn');
 const backToLobbyBtn = document.getElementById('backToLobbyBtn');
 const leaveLobbyBtn = document.getElementById('leaveLobbyBtn');
 const currentRoomName = document.getElementById('currentRoomName');
+const unassignedPlayers = document.getElementById('unassignedPlayers');
+const unassignedPlayerList = document.getElementById('unassignedPlayerList');
 
 // Networking
 let socket = null;
@@ -119,6 +121,7 @@ function updateLobbyFromServer(roomState) {
   // Group players by team
   const redPlayers = roomState.players.filter(p => p.team === 'red');
   const bluePlayers = roomState.players.filter(p => p.team === 'blue');
+  const unassignedPlayersData = roomState.players.filter(p => !p.team || p.team === null);
 
   // Fill red team slots
   redPlayers.forEach((player, index) => {
@@ -142,15 +145,43 @@ function updateLobbyFromServer(roomState) {
     }
   });
 
-  // Update start button
-  const hasPlayers = roomState.players.length > 0;
-  startGameBtn.disabled = !hasPlayers;
+  // Update unassigned players list
+  updateUnassignedPlayersList(unassignedPlayersData);
+
+  // Update start button - only enable if we have players on teams
+  const playersOnTeams = redPlayers.length + bluePlayers.length;
+  startGameBtn.disabled = playersOnTeams === 0;
 
   const lobbyInfo = document.querySelector('.lobby-info');
-  if (hasPlayers) {
-    lobbyInfo.textContent = `${roomState.players.length} players ready!`;
+  if (playersOnTeams > 0) {
+    lobbyInfo.textContent = `${playersOnTeams} players on teams, ${unassignedPlayersData.length} waiting`;
   } else {
     lobbyInfo.textContent = 'Select teams to begin playing!';
+  }
+}
+
+function updateUnassignedPlayersList(unassignedPlayersData) {
+  // Show/hide the unassigned players section
+  if (unassignedPlayersData.length > 0) {
+    unassignedPlayers.style.display = 'block';
+
+    // Clear and populate the list
+    unassignedPlayerList.innerHTML = '';
+
+    unassignedPlayersData.forEach(player => {
+      const playerElement = document.createElement('div');
+      playerElement.className = 'unassigned-player';
+
+      // Highlight local player
+      if (player.id === myPlayerId) {
+        playerElement.classList.add('local');
+      }
+
+      playerElement.textContent = player.name;
+      unassignedPlayerList.appendChild(playerElement);
+    });
+  } else {
+    unassignedPlayers.style.display = 'none';
   }
 }
 

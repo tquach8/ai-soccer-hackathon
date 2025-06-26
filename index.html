@@ -399,6 +399,57 @@
       background: #ff5555;
     }
 
+    /* Unassigned Players Section */
+    .unassigned-players {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 2px solid #666;
+      border-radius: 8px;
+      background: #1a1a1a;
+      text-align: center;
+    }
+
+    .unassigned-players h3 {
+      color: #ffaa44;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+
+    .player-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      min-height: 40px;
+      align-items: center;
+    }
+
+    .unassigned-player {
+      padding: 8px 16px;
+      background: #333;
+      border: 2px solid #555;
+      border-radius: 20px;
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .unassigned-player.local {
+      background: #44ff44;
+      color: #000;
+      border-color: #55ff55;
+      box-shadow: 0 0 10px rgba(68, 255, 68, 0.3);
+    }
+
+    .assignment-info {
+      color: #aaa;
+      font-size: 14px;
+      margin: 0;
+      font-style: italic;
+    }
+
     /* Lobby Browser Styles */
     .lobby-browser {
       flex: 1;
@@ -566,6 +617,14 @@
           <span class="room-name" id="currentRoomName">Room: Unknown</span>
           <button id="leaveLobbyBtn" class="leave-btn">Leave Room</button>
         </div>
+      </div>
+
+      <div class="unassigned-players" id="unassignedPlayers" style="display: none;">
+        <h3>Players in Lobby</h3>
+        <div class="player-list" id="unassignedPlayerList">
+          <!-- Unassigned players will be populated here -->
+        </div>
+        <p class="assignment-info">Click a team slot below to join a team</p>
       </div>
 
       <div class="teams-container">
