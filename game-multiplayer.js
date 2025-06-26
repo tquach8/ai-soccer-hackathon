@@ -14,11 +14,8 @@ const lobbyScreen = document.getElementById('lobbyScreen');
 const gameScreen = document.getElementById('gameScreen');
 
 // Main menu elements
-const quickPlayBtn = document.getElementById('quickPlayBtn');
 const createRoomBtn = document.getElementById('createRoomBtn');
-const joinRoomBtn = document.getElementById('joinRoomBtn');
 const roomNameInput = document.getElementById('roomNameInput');
-const joinRoomInput = document.getElementById('joinRoomInput');
 const playerNameInput = document.getElementById('playerNameInput');
 
 // Lobby browser elements
@@ -555,18 +552,12 @@ function requestLobbyList() {
 
 // Main menu functions
 function initializeMainMenu() {
-  quickPlayBtn.addEventListener('click', handleQuickPlay);
   createRoomBtn.addEventListener('click', handleCreateRoom);
-  joinRoomBtn.addEventListener('click', handleJoinRoom);
   refreshLobbiesBtn.addEventListener('click', requestLobbyList);
 
   // Enter key handlers for inputs
   roomNameInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleCreateRoom();
-  });
-
-  joinRoomInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleJoinRoom();
   });
 
   // Request initial lobby list
@@ -575,34 +566,8 @@ function initializeMainMenu() {
   }, 500);
 }
 
-function handleQuickPlay() {
-  if (!connected) {
-    alert('Not connected to server!');
-    return;
-  }
-
-  const playerName = playerNameInput.value.trim() || 'Player';
-  joinRoom('quickplay', playerName);
-}
-
 function handleCreateRoom() {
   const roomName = roomNameInput.value.trim();
-  if (!roomName) {
-    alert('Please enter a room name!');
-    return;
-  }
-
-  if (!connected) {
-    alert('Not connected to server!');
-    return;
-  }
-
-  const playerName = playerNameInput.value.trim() || 'Player';
-  joinRoom(roomName, playerName);
-}
-
-function handleJoinRoom() {
-  const roomName = joinRoomInput.value.trim();
   if (!roomName) {
     alert('Please enter a room name!');
     return;

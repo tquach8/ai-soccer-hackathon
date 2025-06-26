@@ -339,6 +339,7 @@
       border: 2px solid #444;
       border-radius: 8px;
       background: #2a2a2a;
+      margin-bottom: 30px;
     }
 
     .player-name-section label {
@@ -566,12 +567,9 @@
   <div id="mainMenuScreen" class="screen">
     <div class="main-menu-layout">
       <div class="menu-container">
-        <h2>Join a Game</h2>
-
-        <div class="menu-section">
-          <h3>Quick Play</h3>
-          <button id="quickPlayBtn" class="menu-btn primary">Find Match</button>
-          <p class="menu-info">Join the first available game</p>
+        <div class="player-name-section">
+          <label for="playerNameInput">Your Name:</label>
+          <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="15" value="Player">
         </div>
 
         <div class="menu-section">
@@ -581,20 +579,6 @@
             <button id="createRoomBtn" class="menu-btn">Create</button>
           </div>
           <p class="menu-info">Create a private room for friends</p>
-        </div>
-
-        <div class="menu-section">
-          <h3>Join Room</h3>
-          <div class="room-input-group">
-            <input type="text" id="joinRoomInput" placeholder="Enter room name" maxlength="20">
-            <button id="joinRoomBtn" class="menu-btn">Join</button>
-          </div>
-          <p class="menu-info">Join a friend's room</p>
-        </div>
-
-        <div class="player-name-section">
-          <label for="playerNameInput">Your Name:</label>
-          <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="15" value="Player">
         </div>
       </div>
 
@@ -673,8 +657,8 @@
       </div>
       <div class="score-separator">-</div>
       <div class="score-item">
-        <span class="score-value" id="rightTeamScore">0</span>
         <span class="score-label" id="rightTeamLabel">Blue</span>
+        <span class="score-value" id="rightTeamScore">0</span>
       </div>
     </div>
 
