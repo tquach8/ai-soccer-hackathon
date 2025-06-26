@@ -397,7 +397,9 @@ function render() {
   gameState.players.forEach(player => {
     const isLocalPlayer = player.id === myPlayerId;
     const isKicking = isLocalPlayer && keys[' '];
-    const isBoosting = isLocalPlayer && keys['shift'] && player.boost > 0;
+    // Check boost for all players based on their server state
+    const isBoosting = (isLocalPlayer && keys['shift'] && player.boost > 0) ||
+      (!isLocalPlayer && player.keys && player.keys.shift && player.boost > 0);
 
     // Determine player color based on team
     let playerColor = player.team === 'red' ? '#ff4444' : '#4444ff';
@@ -414,9 +416,12 @@ function render() {
       strokeColor = '#ffff44';
       strokeWidth = 4;
     } else if (isBoosting) {
-      // Boosting effect
-      shadowColor = player.team === 'red' ? '#ff4444' : '#4444ff';
-      shadowBlur = 15;
+      // Boosting effect - change player color to bright cyan and add glow
+      playerColor = '#00ffff'; // Bright cyan for boost
+      shadowColor = '#00ffff';
+      shadowBlur = 20;
+      strokeColor = '#ffffff';
+      strokeWidth = 2;
     }
 
     // Apply shadow if needed
@@ -472,7 +477,7 @@ function predictLocalPlayer() {
   let speed = 1.5; // PLAYER_SPEED
 
   if (keys['shift'] && localPlayer.boost > 0) {
-    speed = 2.2; // BOOST_SPEED
+    speed = 2.7; // BOOST_SPEED - increased to match server
   }
 
   // Movement prediction
