@@ -153,8 +153,9 @@ class GameRoom {
     this.id = roomId;
     this.ownerId = ownerId; // First person to join becomes owner
     this.players = new Map();
-    this.gameState = 'lobby'; // 'lobby', 'playing'
+    this.gameState = 'lobby'; // 'lobby', 'playing', 'finished'
     this.scores = { red: 0, blue: 0 };
+    this.playerGoals = new Map(); // Track individual player goals
     this.gameLoop = null;
 
     // Kickoff system
@@ -167,7 +168,8 @@ class GameRoom {
       y: 0, // Will be set when game starts
       vx: 0,
       vy: 0,
-      radius: 10
+      radius: 10,
+      lastTouchedBy: null // Track who last touched the ball
     };
 
     // Boost pads - will be generated dynamically based on map size
@@ -240,6 +242,12 @@ class GameRoom {
   startGame() {
     this.gameState = 'playing';
     this.scores = { red: 0, blue: 0 };
+    this.playerGoals.clear(); // Reset individual player goal counts
+
+    // Initialize goal counts for all players
+    this.players.forEach((player, playerId) => {
+      this.playerGoals.set(playerId, 0);
+    });
 
     // Set initial kickoff for red team
     this.kickoffActive = true;
@@ -261,6 +269,7 @@ class GameRoom {
     this.ball.y = dimensions.height / 2;
     this.ball.vx = 0;
     this.ball.vy = 0;
+    this.ball.lastTouchedBy = null; // Clear last touched
   }
 
   resetPlayers() {
@@ -465,6 +474,9 @@ class GameRoom {
     const minDistance = 20 + this.ball.radius;
 
     if (dist < minDistance) {
+      // Track who touched the ball
+      this.ball.lastTouchedBy = player.id;
+
       // End kickoff if the kickoff team touches the ball
       if (this.kickoffActive && player.team === this.kickoffTeam) {
         this.kickoffActive = false;
@@ -505,6 +517,9 @@ class GameRoom {
     const hitRange = 20 + this.ball.radius + 10;
 
     if (dist < hitRange) {
+      // Track who hit the ball
+      this.ball.lastTouchedBy = player.id;
+
       // End kickoff if the kickoff team touches the ball
       if (this.kickoffActive && player.team === this.kickoffTeam) {
         this.kickoffActive = false;
@@ -562,18 +577,28 @@ class GameRoom {
       right: { x: dimensions.width - goalWidth, y: dimensions.height / 2 - goalHeight / 2, width: goalWidth, height: goalHeight }
     };
 
+    let goalScored = false;
+    let scoringTeam = null;
+
     // Left goal (blue team scores)
     if (this.ball.x <= goals.left.x + goals.left.width &&
       this.ball.y >= goals.left.y &&
       this.ball.y <= goals.left.y + goals.left.height) {
       this.scores.blue++;
+      goalScored = true;
+      scoringTeam = 'blue';
+
+      // Track individual goal if someone touched the ball
+      if (this.ball.lastTouchedBy && this.players.has(this.ball.lastTouchedBy)) {
+        const scorer = this.players.get(this.ball.lastTouchedBy);
+        if (scorer.team === 'blue') {
+          this.playerGoals.set(this.ball.lastTouchedBy, (this.playerGoals.get(this.ball.lastTouchedBy) || 0) + 1);
+        }
+      }
 
       // Set kickoff for red team (they didn't score)
       this.kickoffActive = true;
       this.kickoffTeam = 'red';
-
-      this.resetBall();
-      this.resetPlayers();
     }
 
     // Right goal (red team scores)
@@ -581,14 +606,98 @@ class GameRoom {
       this.ball.y >= goals.right.y &&
       this.ball.y <= goals.right.y + goals.right.height) {
       this.scores.red++;
+      goalScored = true;
+      scoringTeam = 'red';
+
+      // Track individual goal if someone touched the ball
+      if (this.ball.lastTouchedBy && this.players.has(this.ball.lastTouchedBy)) {
+        const scorer = this.players.get(this.ball.lastTouchedBy);
+        if (scorer.team === 'red') {
+          this.playerGoals.set(this.ball.lastTouchedBy, (this.playerGoals.get(this.ball.lastTouchedBy) || 0) + 1);
+        }
+      }
 
       // Set kickoff for blue team (they didn't score)
       this.kickoffActive = true;
       this.kickoffTeam = 'blue';
-
-      this.resetBall();
-      this.resetPlayers();
     }
+
+    if (goalScored) {
+      // Check for win condition (first to 3 goals)
+      if (this.scores.red >= 3 || this.scores.blue >= 3) {
+        this.endGame(scoringTeam);
+      } else {
+        this.resetBall();
+        this.resetPlayers();
+      }
+    }
+  }
+
+  endGame(winningTeam) {
+    this.gameState = 'finished';
+    this.stopGameLoop();
+
+    // Prepare game results
+    const gameResults = {
+      winningTeam: winningTeam,
+      finalScores: { ...this.scores },
+      playerStats: this.getPlayerStats()
+    };
+
+    // Broadcast game end
+    io.to(this.id).emit('gameEnded', gameResults);
+  }
+
+  returnToLobby() {
+    this.gameState = 'lobby';
+    this.scores = { red: 0, blue: 0 };
+    this.playerGoals.clear();
+    this.kickoffActive = false;
+    this.kickoffTeam = null;
+    this.stopGameLoop();
+
+    // Reset ball position but don't start game loop
+    this.resetBall();
+
+    // Reset player positions to default lobby positions
+    this.players.forEach(player => {
+      const dimensions = getMapDimensions(this.players.size);
+      player.x = 100;
+      player.y = dimensions.height / 2;
+      player.boost = 100;
+      player.keys = {};
+    });
+
+    // Broadcast return to lobby
+    const roomState = this.getState();
+    io.to(this.id).emit('roomUpdate', roomState);
+  }
+
+  getPlayerStats() {
+    const stats = {
+      red: [],
+      blue: []
+    };
+
+    this.players.forEach((player, playerId) => {
+      const playerStat = {
+        id: playerId,
+        name: player.name,
+        goals: this.playerGoals.get(playerId) || 0
+      };
+
+      if (player.team === 'red') {
+        stats.red.push(playerStat);
+      } else if (player.team === 'blue') {
+        stats.blue.push(playerStat);
+      }
+    });
+
+    // Sort by goals descending
+    stats.red.sort((a, b) => b.goals - a.goals);
+    stats.blue.sort((a, b) => b.goals - a.goals);
+
+    return stats;
   }
 
   startGameLoop() {

@@ -697,6 +697,135 @@
     .logout-btn:hover {
       background: #ff5555;
     }
+
+    /* Winning Screen Styles */
+    .winning-screen {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .winner-announcement {
+      margin-bottom: 40px;
+    }
+
+    .winner-title {
+      font-size: 48px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .winner-title.red {
+      color: #ff4444;
+    }
+
+    .winner-title.blue {
+      color: #4444ff;
+    }
+
+    .final-score {
+      font-size: 32px;
+      color: #44ff44;
+      margin-bottom: 10px;
+    }
+
+    .scoreboard {
+      display: flex;
+      justify-content: space-between;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .team-stats {
+      flex: 1;
+      background: #2a2a2a;
+      border: 2px solid #444;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .team-stats.red {
+      border-color: #ff4444;
+    }
+
+    .team-stats.blue {
+      border-color: #4444ff;
+    }
+
+    .team-stats h3 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #44ff44;
+    }
+
+    .player-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #444;
+    }
+
+    .player-stat:last-child {
+      border-bottom: none;
+    }
+
+    .player-name {
+      font-size: 16px;
+      color: white;
+    }
+
+    .player-goals {
+      font-size: 18px;
+      font-weight: bold;
+      color: #44ff44;
+    }
+
+    .no-goals {
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .game-controls {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .control-btn {
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .control-btn.primary {
+      background: #44ff44;
+      color: #000;
+    }
+
+    .control-btn.primary:hover {
+      background: #55ff55;
+      transform: translateY(-2px);
+    }
+
+    .control-btn.secondary {
+      background: #666;
+      color: white;
+    }
+
+    .control-btn.secondary:hover {
+      background: #777;
+      transform: translateY(-2px);
+    }
   </style>
 </head>
 
@@ -859,6 +988,37 @@
       <p><strong>Controls:</strong></p>
       <p>WASD - Move | SHIFT - Boost | SPACE - Hit Ball</p>
       <button id="backToLobbyBtn" class="back-btn">Back to Lobby</button>
+    </div>
+  </div>
+
+  <!-- Winning Screen -->
+  <div id="winningScreen" class="screen" style="display: none;">
+    <div class="winning-screen">
+      <div class="winner-announcement">
+        <h1 id="winnerTitle" class="winner-title">🎉 Red Team Wins! 🎉</h1>
+        <div id="finalScore" class="final-score">Final Score: 3 - 2</div>
+      </div>
+
+      <div class="scoreboard">
+        <div class="team-stats red" id="redTeamStats">
+          <h3>🔴 Red Team</h3>
+          <div id="redPlayerStats">
+            <!-- Red team player stats will be populated here -->
+          </div>
+        </div>
+
+        <div class="team-stats blue" id="blueTeamStats">
+          <h3>🔵 Blue Team</h3>
+          <div id="bluePlayerStats">
+            <!-- Blue team player stats will be populated here -->
+          </div>
+        </div>
+      </div>
+
+      <div class="game-controls">
+        <button id="playAgainBtn" class="control-btn primary">Play Again</button>
+        <button id="backToMenuBtn" class="control-btn secondary">Back to Menu</button>
+      </div>
     </div>
   </div>
 

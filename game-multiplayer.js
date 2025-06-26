@@ -12,6 +12,7 @@ const rightTeamLabelElement = document.getElementById('rightTeamLabel');
 const mainMenuScreen = document.getElementById('mainMenuScreen');
 const lobbyScreen = document.getElementById('lobbyScreen');
 const gameScreen = document.getElementById('gameScreen');
+const winningScreen = document.getElementById('winningScreen');
 
 // Main menu elements
 const createRoomBtn = document.getElementById('createRoomBtn');
@@ -29,6 +30,14 @@ const leaveLobbyBtn = document.getElementById('leaveLobbyBtn');
 const currentRoomName = document.getElementById('currentRoomName');
 const unassignedPlayers = document.getElementById('unassignedPlayers');
 const unassignedPlayerList = document.getElementById('unassignedPlayerList');
+
+// Winning screen elements
+const winnerTitle = document.getElementById('winnerTitle');
+const finalScore = document.getElementById('finalScore');
+const redPlayerStats = document.getElementById('redPlayerStats');
+const bluePlayerStats = document.getElementById('bluePlayerStats');
+const playAgainBtn = document.getElementById('playAgainBtn');
+const backToMenuBtn = document.getElementById('backToMenuBtn');
 
 // Networking
 let socket = null;
@@ -112,6 +121,11 @@ function initNetwork() {
 
   socket.on('lobbyListUpdate', (lobbies) => {
     updateLobbyList(lobbies);
+  });
+
+  socket.on('gameEnded', (gameResults) => {
+    console.log('Game ended:', gameResults);
+    showWinningScreen(gameResults);
   });
 
   socket.on('error', (errorData) => {
@@ -223,6 +237,7 @@ function showGameScreen() {
   mainMenuScreen.style.display = 'none';
   lobbyScreen.style.display = 'none';
   gameScreen.style.display = 'block';
+  winningScreen.style.display = 'none';
 
   // Start render loop
   renderLoop();
@@ -233,6 +248,7 @@ function showMainMenuScreen() {
   mainMenuScreen.style.display = 'block';
   lobbyScreen.style.display = 'none';
   gameScreen.style.display = 'none';
+  winningScreen.style.display = 'none';
 }
 
 // Show lobby screen
@@ -240,10 +256,63 @@ function showLobbyScreen() {
   mainMenuScreen.style.display = 'none';
   lobbyScreen.style.display = 'block';
   gameScreen.style.display = 'none';
+  winningScreen.style.display = 'none';
 
   // Update room name display
   if (myRoomName) {
     currentRoomName.textContent = `Room: ${myRoomName}`;
+  }
+}
+
+// Show winning screen
+function showWinningScreen(gameResults) {
+  mainMenuScreen.style.display = 'none';
+  lobbyScreen.style.display = 'none';
+  gameScreen.style.display = 'none';
+  winningScreen.style.display = 'block';
+
+  // Update winner announcement
+  const winningTeam = gameResults.winningTeam;
+  const teamEmoji = winningTeam === 'red' ? '🔴' : '🔵';
+  const teamName = winningTeam.charAt(0).toUpperCase() + winningTeam.slice(1);
+
+  winnerTitle.textContent = `🎉 ${teamEmoji} ${teamName} Team Wins! 🎉`;
+  winnerTitle.className = `winner-title ${winningTeam}`;
+
+  finalScore.textContent = `Final Score: ${gameResults.finalScores.red} - ${gameResults.finalScores.blue}`;
+
+  // Populate team statistics
+  populateTeamStats('red', gameResults.playerStats.red);
+  populateTeamStats('blue', gameResults.playerStats.blue);
+}
+
+function populateTeamStats(team, playerStats) {
+  const container = team === 'red' ? redPlayerStats : bluePlayerStats;
+  container.innerHTML = '';
+
+  if (playerStats.length === 0) {
+    container.innerHTML = '<div class="no-goals">No players on this team</div>';
+    return;
+  }
+
+  playerStats.forEach(player => {
+    const playerElement = document.createElement('div');
+    playerElement.className = 'player-stat';
+
+    playerElement.innerHTML = `
+      <span class="player-name">${player.name}</span>
+      <span class="player-goals">${player.goals} ${player.goals === 1 ? 'goal' : 'goals'}</span>
+    `;
+
+    container.appendChild(playerElement);
+  });
+
+  // Add a message if no one scored
+  if (playerStats.every(player => player.goals === 0)) {
+    const noGoalsElement = document.createElement('div');
+    noGoalsElement.className = 'no-goals';
+    noGoalsElement.textContent = 'No goals scored by this team';
+    container.appendChild(noGoalsElement);
   }
 }
 
@@ -678,6 +747,20 @@ function initializeLobby() {
   startGameBtn.addEventListener('click', startGame);
   backToLobbyBtn.addEventListener('click', backToLobby);
   leaveLobbyBtn.addEventListener('click', leaveRoom);
+
+  // Winning screen button listeners
+  playAgainBtn.addEventListener('click', () => {
+    if (inRoom) {
+      showLobbyScreen();
+    } else {
+      showMainMenuScreen();
+    }
+  });
+
+  backToMenuBtn.addEventListener('click', () => {
+    leaveRoom();
+    showMainMenuScreen();
+  });
 }
 
 function handleSlotClick(event) {
