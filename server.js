@@ -36,18 +36,23 @@ const gameRooms = new Map();
 class GameRoom {
   constructor(roomId, ownerId) {
     this.id = roomId;
-    this.ownerId = ownerId; // The player who created the room
+    this.ownerId = ownerId; // First person to join becomes owner
     this.players = new Map();
-    this.gameState = 'lobby'; // 'lobby', 'playing', 'finished'
+    this.gameState = 'lobby'; // 'lobby', 'playing'
     this.scores = { red: 0, blue: 0 };
+    this.gameLoop = null;
 
-    // Ball state
+    // Kickoff system
+    this.kickoffActive = false;
+    this.kickoffTeam = null; // 'red' or 'blue' - team that gets to kick off
+
+    // Ball
     this.ball = {
       x: GAME_CONFIG.CANVAS_WIDTH / 2,
       y: GAME_CONFIG.CANVAS_HEIGHT / 2,
       vx: 0,
       vy: 0,
-      radius: 15
+      radius: 10
     };
 
     // Boost pads
@@ -59,7 +64,6 @@ class GameRoom {
     ];
 
     this.lastUpdate = Date.now();
-    this.gameLoop = null;
   }
 
   addPlayer(socketId, playerData) {
@@ -103,6 +107,11 @@ class GameRoom {
   startGame() {
     this.gameState = 'playing';
     this.scores = { red: 0, blue: 0 };
+
+    // Set initial kickoff for red team
+    this.kickoffActive = true;
+    this.kickoffTeam = 'red';
+
     this.resetBall();
     this.resetPlayers();
     this.startGameLoop();
@@ -201,6 +210,40 @@ class GameRoom {
     player.x += dx * speed;
     player.y += dy * speed;
 
+    // Center line restriction during kickoff
+    if (this.kickoffActive) {
+      const centerLine = GAME_CONFIG.CANVAS_WIDTH / 2;
+      const centerX = GAME_CONFIG.CANVAS_WIDTH / 2;
+      const centerY = GAME_CONFIG.CANVAS_HEIGHT / 2;
+      const centerCircleRadius = 80;
+
+      // Calculate distance from player to center circle
+      const distanceToCenter = Math.sqrt((player.x - centerX) ** 2 + (player.y - centerY) ** 2);
+
+      // Prevent scoring team from crossing center line OR entering center circle
+      if (this.kickoffTeam === 'red' && player.team === 'blue') {
+        // Blue team scored, so they can't cross to the left side OR enter center circle
+        player.x = Math.max(player.x, centerLine);
+
+        // Also prevent them from entering the center circle
+        if (distanceToCenter < centerCircleRadius + 20) { // 20 is player radius
+          const angle = Math.atan2(player.y - centerY, player.x - centerX);
+          player.x = centerX + Math.cos(angle) * (centerCircleRadius + 20);
+          player.y = centerY + Math.sin(angle) * (centerCircleRadius + 20);
+        }
+      } else if (this.kickoffTeam === 'blue' && player.team === 'red') {
+        // Red team scored, so they can't cross to the right side OR enter center circle
+        player.x = Math.min(player.x, centerLine);
+
+        // Also prevent them from entering the center circle
+        if (distanceToCenter < centerCircleRadius + 20) { // 20 is player radius
+          const angle = Math.atan2(player.y - centerY, player.x - centerX);
+          player.x = centerX + Math.cos(angle) * (centerCircleRadius + 20);
+          player.y = centerY + Math.sin(angle) * (centerCircleRadius + 20);
+        }
+      }
+    }
+
     // Keep player mostly in bounds
     const outOfBoundsBuffer = 20 * 0.6;
     player.x = this.clamp(player.x, -outOfBoundsBuffer, GAME_CONFIG.CANVAS_WIDTH + outOfBoundsBuffer);
@@ -246,6 +289,12 @@ class GameRoom {
     const minDistance = 20 + this.ball.radius;
 
     if (dist < minDistance) {
+      // End kickoff if the kickoff team touches the ball
+      if (this.kickoffActive && player.team === this.kickoffTeam) {
+        this.kickoffActive = false;
+        this.kickoffTeam = null;
+      }
+
       const angle = Math.atan2(this.ball.y - player.y, this.ball.x - player.x);
 
       // Separate objects
@@ -280,6 +329,12 @@ class GameRoom {
     const hitRange = 20 + this.ball.radius + 10;
 
     if (dist < hitRange) {
+      // End kickoff if the kickoff team touches the ball
+      if (this.kickoffActive && player.team === this.kickoffTeam) {
+        this.kickoffActive = false;
+        this.kickoffTeam = null;
+      }
+
       const angle = Math.atan2(this.ball.y - player.y, this.ball.x - player.x);
       let force = GAME_CONFIG.HIT_FORCE;
 
@@ -332,6 +387,11 @@ class GameRoom {
       this.ball.y >= goals.left.y &&
       this.ball.y <= goals.left.y + goals.left.height) {
       this.scores.blue++;
+
+      // Set kickoff for red team (they didn't score)
+      this.kickoffActive = true;
+      this.kickoffTeam = 'red';
+
       this.resetBall();
       this.resetPlayers();
     }
@@ -341,6 +401,11 @@ class GameRoom {
       this.ball.y >= goals.right.y &&
       this.ball.y <= goals.right.y + goals.right.height) {
       this.scores.red++;
+
+      // Set kickoff for blue team (they didn't score)
+      this.kickoffActive = true;
+      this.kickoffTeam = 'blue';
+
       this.resetBall();
       this.resetPlayers();
     }
@@ -368,7 +433,9 @@ class GameRoom {
       ball: this.ball,
       scores: this.scores,
       boostPads: this.boostPads,
-      gameState: this.gameState
+      gameState: this.gameState,
+      kickoffActive: this.kickoffActive,
+      kickoffTeam: this.kickoffTeam
     };
 
     io.to(this.id).emit('gameState', gameState);

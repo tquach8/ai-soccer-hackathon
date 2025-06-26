@@ -329,6 +329,27 @@ function render() {
   ctx.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2);
   ctx.stroke();
 
+  // Show kickoff restriction zone
+  if (gameState.kickoffActive && gameState.kickoffTeam) {
+    // Highlight the center circle with team color overlay
+    const kickoffColor = gameState.kickoffTeam === 'red' ? 'rgba(255, 68, 68, 0.15)' : 'rgba(68, 68, 255, 0.15)';
+    const kickoffBorderColor = gameState.kickoffTeam === 'red' ? '#ff4444' : '#4444ff';
+
+    ctx.fillStyle = kickoffColor;
+    ctx.beginPath();
+    ctx.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Add dashed border to make restriction clearer
+    ctx.strokeStyle = kickoffBorderColor;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 5]);
+    ctx.beginPath();
+    ctx.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
   ctx.setLineDash([]);
 
   // Draw goals
