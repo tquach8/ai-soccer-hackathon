@@ -17,8 +17,16 @@ app.use(express.static(path.join(__dirname)));
 
 // Game constants (match client-side)
 const GAME_CONFIG = {
-  CANVAS_WIDTH: 700,
-  CANVAS_HEIGHT: 400,
+  // Base dimensions for 1-4 players
+  BASE_CANVAS_WIDTH: 700,
+  BASE_CANVAS_HEIGHT: 400,
+  // Medium dimensions for 5-6 players  
+  MEDIUM_CANVAS_WIDTH: 900,
+  MEDIUM_CANVAS_HEIGHT: 500,
+  // Large dimensions for 7-8 players
+  LARGE_CANVAS_WIDTH: 1100,
+  LARGE_CANVAS_HEIGHT: 600,
+
   PLAYER_SPEED: 1.5,
   BOOST_SPEED: 2.7,
   BALL_FRICTION: 0.995,
@@ -27,8 +35,20 @@ const GAME_CONFIG = {
   BOOST_HIT_MULTIPLIER: 1.3,
   BOOST_DRAIN_RATE: 1,
   BOOST_REGEN_RATE: 0.05,
-  TICK_RATE: 120
+  TICK_RATE: 120,
+  MAX_PLAYERS: 8
 };
+
+// Helper function to get map dimensions based on player count
+function getMapDimensions(playerCount) {
+  if (playerCount <= 4) {
+    return { width: GAME_CONFIG.BASE_CANVAS_WIDTH, height: GAME_CONFIG.BASE_CANVAS_HEIGHT };
+  } else if (playerCount <= 6) {
+    return { width: GAME_CONFIG.MEDIUM_CANVAS_WIDTH, height: GAME_CONFIG.MEDIUM_CANVAS_HEIGHT };
+  } else {
+    return { width: GAME_CONFIG.LARGE_CANVAS_WIDTH, height: GAME_CONFIG.LARGE_CANVAS_HEIGHT };
+  }
+}
 
 // Game state
 const gameRooms = new Map();
@@ -46,49 +66,67 @@ class GameRoom {
     this.kickoffActive = false;
     this.kickoffTeam = null; // 'red' or 'blue' - team that gets to kick off
 
-    // Ball
+    // Ball - will be positioned dynamically based on map size
     this.ball = {
-      x: GAME_CONFIG.CANVAS_WIDTH / 2,
-      y: GAME_CONFIG.CANVAS_HEIGHT / 2,
+      x: 0, // Will be set when game starts
+      y: 0, // Will be set when game starts
       vx: 0,
       vy: 0,
       radius: 10
     };
 
-    // Boost pads
-    this.boostPads = [
-      { x: 50, y: 50, active: true, cooldown: 0, maxCooldown: 180 },
-      { x: GAME_CONFIG.CANVAS_WIDTH - 50, y: 50, active: true, cooldown: 0, maxCooldown: 180 },
-      { x: 50, y: GAME_CONFIG.CANVAS_HEIGHT - 50, active: true, cooldown: 0, maxCooldown: 180 },
-      { x: GAME_CONFIG.CANVAS_WIDTH - 50, y: GAME_CONFIG.CANVAS_HEIGHT - 50, active: true, cooldown: 0, maxCooldown: 180 }
-    ];
+    // Boost pads - will be generated dynamically based on map size
+    this.boostPads = [];
 
     this.lastUpdate = Date.now();
   }
 
+  // Generate boost pads based on current map dimensions
+  generateBoostPads() {
+    const dimensions = getMapDimensions(this.players.size);
+    const { width, height } = dimensions;
+
+    this.boostPads = [
+      // Corner boost pads
+      { x: 80, y: 80, active: true, cooldown: 0, maxCooldown: 180 },
+      { x: width - 80, y: 80, active: true, cooldown: 0, maxCooldown: 180 },
+      { x: 80, y: height - 80, active: true, cooldown: 0, maxCooldown: 180 },
+      { x: width - 80, y: height - 80, active: true, cooldown: 0, maxCooldown: 180 }
+    ];
+  }
+
   addPlayer(socketId, playerData) {
-    const player = {
+    const dimensions = getMapDimensions(this.players.size + 1); // +1 for the player being added
+
+    this.players.set(socketId, {
       id: socketId,
       name: playerData.name,
-      team: playerData.team || null, // Allow no team initially
-      x: 100, // Default position, will be updated when team is selected
-      y: GAME_CONFIG.CANVAS_HEIGHT / 2,
+      team: playerData.team,
+      x: 100,
+      y: dimensions.height / 2,
       boost: 100,
       keys: {},
       lastUpdate: Date.now()
-    };
+    });
 
-    this.players.set(socketId, player);
-    return player;
+    // Regenerate boost pads for new player count
+    this.generateBoostPads();
+
+    return this.players.get(socketId);
   }
 
   removePlayer(socketId) {
     this.players.delete(socketId);
 
-    // If the owner left, transfer ownership to another player
+    // Transfer ownership if owner left
     if (this.ownerId === socketId && this.players.size > 0) {
       this.ownerId = Array.from(this.players.keys())[0];
       console.log(`Owner left room ${this.id}, transferring ownership to ${this.ownerId}`);
+    }
+
+    // Regenerate boost pads for new player count
+    if (this.players.size > 0) {
+      this.generateBoostPads();
     }
 
     if (this.players.size === 0) {
@@ -112,6 +150,8 @@ class GameRoom {
     this.kickoffActive = true;
     this.kickoffTeam = 'red';
 
+    // Generate boost pads and reset positions for current player count
+    this.generateBoostPads();
     this.resetBall();
     this.resetPlayers();
     this.startGameLoop();
@@ -121,40 +161,43 @@ class GameRoom {
   }
 
   resetBall() {
-    this.ball.x = GAME_CONFIG.CANVAS_WIDTH / 2;
-    this.ball.y = GAME_CONFIG.CANVAS_HEIGHT / 2;
+    const dimensions = getMapDimensions(this.players.size);
+    this.ball.x = dimensions.width / 2;
+    this.ball.y = dimensions.height / 2;
     this.ball.vx = 0;
     this.ball.vy = 0;
   }
 
   resetPlayers() {
+    const dimensions = getMapDimensions(this.players.size);
+
     // Group players by team
     const redPlayers = Array.from(this.players.values()).filter(p => p.team === 'red');
     const bluePlayers = Array.from(this.players.values()).filter(p => p.team === 'blue');
 
-    // Reset red team positions
+    // Reset red team positions (left side)
     redPlayers.forEach((player, index) => {
       player.x = 100;
       if (redPlayers.length === 1) {
-        player.y = GAME_CONFIG.CANVAS_HEIGHT / 2; // Center if only one player
+        player.y = dimensions.height / 2; // Center if only one player
       } else {
         // Stagger Y positions if multiple players
-        const spacing = 80; // Vertical spacing between players
-        const startY = GAME_CONFIG.CANVAS_HEIGHT / 2 - ((redPlayers.length - 1) * spacing / 2);
+        const spacing = Math.min(80, (dimensions.height - 160) / (redPlayers.length - 1)); // Adaptive spacing
+        const startY = dimensions.height / 2 - ((redPlayers.length - 1) * spacing / 2);
         player.y = startY + (index * spacing);
       }
       player.boost = 100;
     });
 
-    // Reset blue team positions
+    // Reset blue team positions (right side)
     bluePlayers.forEach((player, index) => {
-      player.x = GAME_CONFIG.CANVAS_WIDTH - 100;
+      player.x = dimensions.width - 100;
       if (bluePlayers.length === 1) {
-        player.y = GAME_CONFIG.CANVAS_HEIGHT / 2; // Center if only one player
+        player.y = dimensions.height / 2; // Center if only one player
       } else {
         // Stagger Y positions if multiple players
-        const spacing = 80; // Vertical spacing between players
-        const startY = GAME_CONFIG.CANVAS_HEIGHT / 2 - ((bluePlayers.length - 1) * spacing / 2);
+        const spacing = Math.min(80, (dimensions.height - 160) / (bluePlayers.length - 1)); // Adaptive spacing
+        const startY = dimensions.height / 2 - ((bluePlayers.length - 1) * spacing / 2);
         player.y = startY + (index * spacing);
       }
       player.boost = 100;
@@ -182,6 +225,8 @@ class GameRoom {
   }
 
   updatePlayer(player, deltaTime) {
+    const dimensions = getMapDimensions(this.players.size);
+
     let speed = GAME_CONFIG.PLAYER_SPEED;
     let isBoosting = player.keys.shift && player.boost > 0;
 
@@ -212,9 +257,9 @@ class GameRoom {
 
     // Center line restriction during kickoff
     if (this.kickoffActive) {
-      const centerLine = GAME_CONFIG.CANVAS_WIDTH / 2;
-      const centerX = GAME_CONFIG.CANVAS_WIDTH / 2;
-      const centerY = GAME_CONFIG.CANVAS_HEIGHT / 2;
+      const centerLine = dimensions.width / 2;
+      const centerX = dimensions.width / 2;
+      const centerY = dimensions.height / 2;
       const centerCircleRadius = 80;
 
       // Calculate distance from player to center circle
@@ -246,8 +291,8 @@ class GameRoom {
 
     // Keep player mostly in bounds
     const outOfBoundsBuffer = 20 * 0.6;
-    player.x = this.clamp(player.x, -outOfBoundsBuffer, GAME_CONFIG.CANVAS_WIDTH + outOfBoundsBuffer);
-    player.y = this.clamp(player.y, -outOfBoundsBuffer, GAME_CONFIG.CANVAS_HEIGHT + outOfBoundsBuffer);
+    player.x = this.clamp(player.x, -outOfBoundsBuffer, dimensions.width + outOfBoundsBuffer);
+    player.y = this.clamp(player.y, -outOfBoundsBuffer, dimensions.height + outOfBoundsBuffer);
 
     // Ball hitting
     if (player.keys.space) {
@@ -259,6 +304,8 @@ class GameRoom {
   }
 
   updateBall(deltaTime) {
+    const dimensions = getMapDimensions(this.players.size);
+
     // Handle player-ball collisions
     this.players.forEach(player => {
       this.handlePlayerBallCollision(player);
@@ -273,14 +320,14 @@ class GameRoom {
     this.ball.vy *= GAME_CONFIG.BALL_FRICTION;
 
     // Wall collisions
-    if (this.ball.x - this.ball.radius <= 0 || this.ball.x + this.ball.radius >= GAME_CONFIG.CANVAS_WIDTH) {
+    if (this.ball.x - this.ball.radius <= 0 || this.ball.x + this.ball.radius >= dimensions.width) {
       this.ball.vx *= -GAME_CONFIG.WALL_BOUNCE;
-      this.ball.x = this.clamp(this.ball.x, this.ball.radius, GAME_CONFIG.CANVAS_WIDTH - this.ball.radius);
+      this.ball.x = this.clamp(this.ball.x, this.ball.radius, dimensions.width - this.ball.radius);
     }
 
-    if (this.ball.y - this.ball.radius <= 0 || this.ball.y + this.ball.radius >= GAME_CONFIG.CANVAS_HEIGHT) {
+    if (this.ball.y - this.ball.radius <= 0 || this.ball.y + this.ball.radius >= dimensions.height) {
       this.ball.vy *= -GAME_CONFIG.WALL_BOUNCE;
-      this.ball.y = this.clamp(this.ball.y, this.ball.radius, GAME_CONFIG.CANVAS_HEIGHT - this.ball.radius);
+      this.ball.y = this.clamp(this.ball.y, this.ball.radius, dimensions.height - this.ball.radius);
     }
   }
 
@@ -377,9 +424,13 @@ class GameRoom {
   }
 
   checkGoals() {
+    const dimensions = getMapDimensions(this.players.size);
+    const goalHeight = Math.min(120, dimensions.height * 0.3); // Goal height scales with map size
+    const goalWidth = 20;
+
     const goals = {
-      left: { x: 0, y: GAME_CONFIG.CANVAS_HEIGHT / 2 - 60, width: 20, height: 120 },
-      right: { x: GAME_CONFIG.CANVAS_WIDTH - 20, y: GAME_CONFIG.CANVAS_HEIGHT / 2 - 60, width: 20, height: 120 }
+      left: { x: 0, y: dimensions.height / 2 - goalHeight / 2, width: goalWidth, height: goalHeight },
+      right: { x: dimensions.width - goalWidth, y: dimensions.height / 2 - goalHeight / 2, width: goalWidth, height: goalHeight }
     };
 
     // Left goal (blue team scores)
@@ -428,6 +479,9 @@ class GameRoom {
   }
 
   broadcastGameState() {
+    const dimensions = getMapDimensions(this.players.size);
+    const goalHeight = Math.min(120, dimensions.height * 0.3);
+
     const gameState = {
       players: Array.from(this.players.values()),
       ball: this.ball,
@@ -435,7 +489,9 @@ class GameRoom {
       boostPads: this.boostPads,
       gameState: this.gameState,
       kickoffActive: this.kickoffActive,
-      kickoffTeam: this.kickoffTeam
+      kickoffTeam: this.kickoffTeam,
+      mapDimensions: dimensions,
+      goalHeight: goalHeight
     };
 
     io.to(this.id).emit('gameState', gameState);
@@ -458,6 +514,10 @@ class GameRoom {
 
   clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
+  }
+
+  canPlayerJoin() {
+    return this.players.size < GAME_CONFIG.MAX_PLAYERS;
   }
 }
 

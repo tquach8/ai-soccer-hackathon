@@ -56,6 +56,17 @@ let lastInputSent = {};
 let localPlayer = null;
 let lastServerUpdate = 0;
 
+// Dynamic canvas sizing
+function resizeCanvas(width, height) {
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+}
+
+// Set initial canvas size (will be updated when game starts)
+resizeCanvas(700, 400);
+
 // Initialize networking
 function initNetwork() {
   socket = io();
@@ -293,6 +304,11 @@ function sendInput() {
 
 // Update client game state
 function updateClientGameState() {
+  // Resize canvas if map dimensions changed
+  if (gameState.mapDimensions) {
+    resizeCanvas(gameState.mapDimensions.width, gameState.mapDimensions.height);
+  }
+
   // Update scores
   leftTeamScoreElement.textContent = gameState.scores.red;
   rightTeamScoreElement.textContent = gameState.scores.blue;
@@ -309,6 +325,11 @@ function updateClientGameState() {
 
 // Render game
 function render() {
+  // Use dynamic dimensions from game state, fallback to canvas size
+  const mapWidth = gameState.mapDimensions ? gameState.mapDimensions.width : canvas.width;
+  const mapHeight = gameState.mapDimensions ? gameState.mapDimensions.height : canvas.height;
+  const goalHeight = gameState.goalHeight || 120;
+
   // Clear canvas
   ctx.fillStyle = '#2a4a2a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -320,13 +341,13 @@ function render() {
 
   // Center line
   ctx.beginPath();
-  ctx.moveTo(canvas.width / 2, 0);
-  ctx.lineTo(canvas.width / 2, canvas.height);
+  ctx.moveTo(mapWidth / 2, 0);
+  ctx.lineTo(mapWidth / 2, mapHeight);
   ctx.stroke();
 
   // Center circle
   ctx.beginPath();
-  ctx.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2);
+  ctx.arc(mapWidth / 2, mapHeight / 2, 80, 0, Math.PI * 2);
   ctx.stroke();
 
   // Show kickoff restriction zone
@@ -337,7 +358,7 @@ function render() {
 
     ctx.fillStyle = kickoffColor;
     ctx.beginPath();
-    ctx.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2);
+    ctx.arc(mapWidth / 2, mapHeight / 2, 80, 0, Math.PI * 2);
     ctx.fill();
 
     // Add dashed border to make restriction clearer
@@ -345,17 +366,17 @@ function render() {
     ctx.lineWidth = 3;
     ctx.setLineDash([10, 5]);
     ctx.beginPath();
-    ctx.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2);
+    ctx.arc(mapWidth / 2, mapHeight / 2, 80, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
   }
 
   ctx.setLineDash([]);
 
-  // Draw goals
+  // Draw goals using dynamic goal height
   ctx.fillStyle = '#ff4444';
-  ctx.fillRect(0, canvas.height / 2 - 60, 20, 120); // Left goal
-  ctx.fillRect(canvas.width - 20, canvas.height / 2 - 60, 20, 120); // Right goal
+  ctx.fillRect(0, mapHeight / 2 - goalHeight / 2, 20, goalHeight); // Left goal
+  ctx.fillRect(mapWidth - 20, mapHeight / 2 - goalHeight / 2, 20, goalHeight); // Right goal
 
   // Draw boost pads
   gameState.boostPads.forEach(pad => {
@@ -493,6 +514,10 @@ function render() {
 function predictLocalPlayer() {
   if (!localPlayer || !connected) return;
 
+  // Get current map dimensions
+  const mapWidth = gameState.mapDimensions ? gameState.mapDimensions.width : 700;
+  const mapHeight = gameState.mapDimensions ? gameState.mapDimensions.height : 400;
+
   // Predict local player movement for smooth controls
   const deltaTime = 16; // Assume 60fps
   let speed = 1.5; // PLAYER_SPEED
@@ -518,10 +543,10 @@ function predictLocalPlayer() {
   localPlayer.x += dx * speed;
   localPlayer.y += dy * speed;
 
-  // Keep in bounds
+  // Keep in bounds using dynamic dimensions
   const outOfBoundsBuffer = 20 * 0.6;
-  localPlayer.x = Math.min(Math.max(localPlayer.x, -outOfBoundsBuffer), 700 + outOfBoundsBuffer);
-  localPlayer.y = Math.min(Math.max(localPlayer.y, -outOfBoundsBuffer), 400 + outOfBoundsBuffer);
+  localPlayer.x = Math.min(Math.max(localPlayer.x, -outOfBoundsBuffer), mapWidth + outOfBoundsBuffer);
+  localPlayer.y = Math.min(Math.max(localPlayer.y, -outOfBoundsBuffer), mapHeight + outOfBoundsBuffer);
 }
 
 // Render loop
@@ -539,9 +564,9 @@ function renderLoop() {
 
 // Lobby list management
 function updateLobbyList(lobbies) {
-  console.log('Received lobby list:', lobbies);
+  const lobbyList = document.getElementById('lobbyList');
 
-  if (!lobbies || lobbies.length === 0) {
+  if (lobbies.length === 0) {
     lobbyList.innerHTML = '<div class="no-lobbies">No active lobbies</div>';
     return;
   }
@@ -550,20 +575,22 @@ function updateLobbyList(lobbies) {
 
   lobbies.forEach(lobby => {
     const lobbyItem = document.createElement('div');
-    lobbyItem.className = `lobby-item ${lobby.playerCount >= 4 ? 'full' : ''}`;
-    lobbyItem.dataset.roomId = lobby.id;
+    lobbyItem.className = `lobby-item ${lobby.playerCount >= 8 ? 'full' : ''}`;
 
     lobbyItem.innerHTML = `
-            <div class="lobby-name">${lobby.id}</div>
-            <div class="lobby-players">
-                <span class="player-count">${lobby.playerCount}/4</span>
-                <span>players</span>
-            </div>
-        `;
+      <div class="lobby-info">
+        <span class="lobby-name">${lobby.id}</span>
+        <span class="player-count">${lobby.playerCount}/8</span>
+      </div>
+      <div class="lobby-status">${lobby.gameState}</div>
+    `;
 
-    // Add click handler if room isn't full
-    if (lobby.playerCount < 4) {
-      lobbyItem.addEventListener('click', () => handleLobbyClick(lobby.id));
+    if (lobby.playerCount < 8) {
+      lobbyItem.style.cursor = 'pointer';
+      lobbyItem.addEventListener('click', () => {
+        const playerName = playerNameInput.value.trim() || 'Player';
+        joinRoom(lobby.id, playerName);
+      });
     }
 
     lobbyList.appendChild(lobbyItem);
