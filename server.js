@@ -119,9 +119,35 @@ class GameRoom {
   }
 
   resetPlayers() {
-    this.players.forEach(player => {
-      player.x = player.team === 'red' ? 100 : GAME_CONFIG.CANVAS_WIDTH - 100;
-      player.y = GAME_CONFIG.CANVAS_HEIGHT / 2;
+    // Group players by team
+    const redPlayers = Array.from(this.players.values()).filter(p => p.team === 'red');
+    const bluePlayers = Array.from(this.players.values()).filter(p => p.team === 'blue');
+
+    // Reset red team positions
+    redPlayers.forEach((player, index) => {
+      player.x = 100;
+      if (redPlayers.length === 1) {
+        player.y = GAME_CONFIG.CANVAS_HEIGHT / 2; // Center if only one player
+      } else {
+        // Stagger Y positions if multiple players
+        const spacing = 80; // Vertical spacing between players
+        const startY = GAME_CONFIG.CANVAS_HEIGHT / 2 - ((redPlayers.length - 1) * spacing / 2);
+        player.y = startY + (index * spacing);
+      }
+      player.boost = 100;
+    });
+
+    // Reset blue team positions
+    bluePlayers.forEach((player, index) => {
+      player.x = GAME_CONFIG.CANVAS_WIDTH - 100;
+      if (bluePlayers.length === 1) {
+        player.y = GAME_CONFIG.CANVAS_HEIGHT / 2; // Center if only one player
+      } else {
+        // Stagger Y positions if multiple players
+        const spacing = 80; // Vertical spacing between players
+        const startY = GAME_CONFIG.CANVAS_HEIGHT / 2 - ((bluePlayers.length - 1) * spacing / 2);
+        player.y = startY + (index * spacing);
+      }
       player.boost = 100;
     });
   }
