@@ -243,16 +243,330 @@
       color: #aaa;
       font-size: 16px;
     }
+
+    /* Main Menu Styles */
+    .main-menu-layout {
+      display: flex;
+      gap: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .menu-container {
+      flex: 1;
+      max-width: 500px;
+    }
+
+    .menu-container h2 {
+      text-align: center;
+      margin-bottom: 40px;
+      font-size: 32px;
+      color: #44ff44;
+    }
+
+    .menu-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 2px solid #444;
+      border-radius: 8px;
+      background: #2a2a2a;
+    }
+
+    .menu-section h3 {
+      color: #44ff44;
+      margin-bottom: 15px;
+      font-size: 20px;
+    }
+
+    .menu-btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      background: #444;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 120px;
+    }
+
+    .menu-btn:hover {
+      background: #555;
+      transform: translateY(-2px);
+    }
+
+    .menu-btn.primary {
+      background: #44ff44;
+      color: #000;
+    }
+
+    .menu-btn.primary:hover {
+      background: #55ff55;
+    }
+
+    .room-input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .room-input-group input {
+      flex: 1;
+      padding: 12px;
+      font-size: 16px;
+      background: #333;
+      color: white;
+      border: 2px solid #555;
+      border-radius: 6px;
+    }
+
+    .room-input-group input:focus {
+      outline: none;
+      border-color: #44ff44;
+    }
+
+    .menu-info {
+      color: #aaa;
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .player-name-section {
+      text-align: center;
+      padding: 20px;
+      border: 2px solid #444;
+      border-radius: 8px;
+      background: #2a2a2a;
+    }
+
+    .player-name-section label {
+      display: block;
+      color: #44ff44;
+      margin-bottom: 10px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .player-name-section input {
+      padding: 12px;
+      font-size: 16px;
+      background: #333;
+      color: white;
+      border: 2px solid #555;
+      border-radius: 6px;
+      text-align: center;
+      min-width: 200px;
+    }
+
+    .player-name-section input:focus {
+      outline: none;
+      border-color: #44ff44;
+    }
+
+    /* Lobby Header */
+    .lobby-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .room-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .room-name {
+      color: #44ff44;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .leave-btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .leave-btn:hover {
+      background: #ff5555;
+    }
+
+    /* Lobby Browser Styles */
+    .lobby-browser {
+      flex: 1;
+      max-width: 400px;
+      padding: 20px;
+      border: 2px solid #444;
+      border-radius: 8px;
+      background: #2a2a2a;
+      height: fit-content;
+    }
+
+    .lobby-browser h3 {
+      color: #44ff44;
+      margin-bottom: 20px;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .lobby-list {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 15px;
+    }
+
+    .lobby-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      margin-bottom: 8px;
+      background: #333;
+      border: 2px solid #555;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .lobby-item:hover {
+      border-color: #44ff44;
+      background: #3a3a3a;
+      transform: translateY(-1px);
+    }
+
+    .lobby-item.full {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .lobby-item.full:hover {
+      border-color: #555;
+      background: #333;
+      transform: none;
+    }
+
+    .lobby-name {
+      font-weight: bold;
+      color: white;
+      font-size: 16px;
+    }
+
+    .lobby-players {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    .player-count {
+      background: #44ff44;
+      color: #000;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .lobby-item.full .player-count {
+      background: #ff4444;
+      color: white;
+    }
+
+    .no-lobbies {
+      text-align: center;
+      color: #666;
+      font-style: italic;
+      padding: 20px;
+    }
+
+    .refresh-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background: #44ff44;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .refresh-btn:hover {
+      background: #55ff55;
+      transform: translateY(-2px);
+    }
   </style>
 </head>
 
 <body>
   <h1>Boost Arena</h1>
 
+  <!-- Main Menu Screen -->
+  <div id="mainMenuScreen" class="screen">
+    <div class="main-menu-layout">
+      <div class="menu-container">
+        <h2>Join a Game</h2>
+
+        <div class="menu-section">
+          <h3>Quick Play</h3>
+          <button id="quickPlayBtn" class="menu-btn primary">Find Match</button>
+          <p class="menu-info">Join the first available game</p>
+        </div>
+
+        <div class="menu-section">
+          <h3>Create Room</h3>
+          <div class="room-input-group">
+            <input type="text" id="roomNameInput" placeholder="Enter room name" maxlength="20">
+            <button id="createRoomBtn" class="menu-btn">Create</button>
+          </div>
+          <p class="menu-info">Create a private room for friends</p>
+        </div>
+
+        <div class="menu-section">
+          <h3>Join Room</h3>
+          <div class="room-input-group">
+            <input type="text" id="joinRoomInput" placeholder="Enter room name" maxlength="20">
+            <button id="joinRoomBtn" class="menu-btn">Join</button>
+          </div>
+          <p class="menu-info">Join a friend's room</p>
+        </div>
+
+        <div class="player-name-section">
+          <label for="playerNameInput">Your Name:</label>
+          <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="15" value="Player">
+        </div>
+      </div>
+
+      <div class="lobby-browser">
+        <h3>Active Lobbies</h3>
+        <div class="lobby-list" id="lobbyList">
+          <div class="no-lobbies">No active lobbies</div>
+        </div>
+        <button id="refreshLobbiesBtn" class="refresh-btn">🔄 Refresh</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Lobby Screen -->
-  <div id="lobbyScreen" class="screen">
+  <div id="lobbyScreen" class="screen" style="display: none;">
     <div class="lobby-container">
-      <h2>Team Selection</h2>
+      <div class="lobby-header">
+        <h2>Team Selection</h2>
+        <div class="room-info">
+          <span class="room-name" id="currentRoomName">Room: Unknown</span>
+          <button id="leaveLobbyBtn" class="leave-btn">Leave Room</button>
+        </div>
+      </div>
 
       <div class="teams-container">
         <div class="team-section red-team">

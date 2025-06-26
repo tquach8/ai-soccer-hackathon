@@ -8,18 +8,37 @@ const rightTeamScoreElement = document.getElementById('rightTeamScore');
 const leftTeamLabelElement = document.getElementById('leftTeamLabel');
 const rightTeamLabelElement = document.getElementById('rightTeamLabel');
 
-// Lobby elements
+// Screen elements
+const mainMenuScreen = document.getElementById('mainMenuScreen');
 const lobbyScreen = document.getElementById('lobbyScreen');
 const gameScreen = document.getElementById('gameScreen');
+
+// Main menu elements
+const quickPlayBtn = document.getElementById('quickPlayBtn');
+const createRoomBtn = document.getElementById('createRoomBtn');
+const joinRoomBtn = document.getElementById('joinRoomBtn');
+const roomNameInput = document.getElementById('roomNameInput');
+const joinRoomInput = document.getElementById('joinRoomInput');
+const playerNameInput = document.getElementById('playerNameInput');
+
+// Lobby browser elements
+const lobbyList = document.getElementById('lobbyList');
+const refreshLobbiesBtn = document.getElementById('refreshLobbiesBtn');
+
+// Lobby elements
 const startGameBtn = document.getElementById('startGameBtn');
 const backToLobbyBtn = document.getElementById('backToLobbyBtn');
+const leaveLobbyBtn = document.getElementById('leaveLobbyBtn');
+const currentRoomName = document.getElementById('currentRoomName');
 
 // Networking
 let socket = null;
 let connected = false;
-let currentRoomId = 'room1'; // Default room
+let currentRoomId = null; // No default room anymore
+let myRoomName = null;
 let myPlayerId = null;
 let myPlayerData = null;
+let inRoom = false;
 
 // Game state (received from server)
 let gameState = {
@@ -55,6 +74,8 @@ function initNetwork() {
 
   socket.on('roomJoined', (roomState) => {
     console.log('Joined room:', roomState);
+    inRoom = true;
+    showLobbyScreen();
     updateLobbyFromServer(roomState);
   });
 
@@ -78,10 +99,16 @@ function initNetwork() {
 
     updateClientGameState();
   });
+
+  socket.on('lobbyListUpdate', (lobbies) => {
+    updateLobbyList(lobbies);
+  });
 }
 
 // Update lobby UI from server data
 function updateLobbyFromServer(roomState) {
+  console.log('Updating lobby with room state:', roomState);
+
   // Clear all slots first
   document.querySelectorAll('.player-slot').forEach(slot => {
     slot.classList.remove('filled');
@@ -89,11 +116,26 @@ function updateLobbyFromServer(roomState) {
     slot.querySelector('.slot-text').textContent = 'Click to Join';
   });
 
-  // Fill slots with players
-  roomState.players.forEach((player, index) => {
-    const teamSlots = document.querySelectorAll(`[data-team="${player.team}"]`);
-    if (teamSlots.length > index) {
-      const slot = teamSlots[index];
+  // Group players by team
+  const redPlayers = roomState.players.filter(p => p.team === 'red');
+  const bluePlayers = roomState.players.filter(p => p.team === 'blue');
+
+  // Fill red team slots
+  redPlayers.forEach((player, index) => {
+    const redSlots = document.querySelectorAll('[data-team="red"]');
+    if (index < redSlots.length) {
+      const slot = redSlots[index];
+      slot.classList.remove('empty');
+      slot.classList.add('filled');
+      slot.querySelector('.slot-text').textContent = player.name;
+    }
+  });
+
+  // Fill blue team slots
+  bluePlayers.forEach((player, index) => {
+    const blueSlots = document.querySelectorAll('[data-team="blue"]');
+    if (index < blueSlots.length) {
+      const slot = blueSlots[index];
       slot.classList.remove('empty');
       slot.classList.add('filled');
       slot.querySelector('.slot-text').textContent = player.name;
@@ -114,6 +156,7 @@ function updateLobbyFromServer(roomState) {
 
 // Show game screen
 function showGameScreen() {
+  mainMenuScreen.style.display = 'none';
   lobbyScreen.style.display = 'none';
   gameScreen.style.display = 'block';
 
@@ -121,10 +164,23 @@ function showGameScreen() {
   renderLoop();
 }
 
+// Show main menu screen
+function showMainMenuScreen() {
+  mainMenuScreen.style.display = 'block';
+  lobbyScreen.style.display = 'none';
+  gameScreen.style.display = 'none';
+}
+
 // Show lobby screen
 function showLobbyScreen() {
+  mainMenuScreen.style.display = 'none';
   lobbyScreen.style.display = 'block';
   gameScreen.style.display = 'none';
+
+  // Update room name display
+  if (myRoomName) {
+    currentRoomName.textContent = `Room: ${myRoomName}`;
+  }
 }
 
 // Input handling
@@ -392,6 +448,141 @@ function renderLoop() {
   }
 }
 
+// Lobby list management
+function updateLobbyList(lobbies) {
+  console.log('Received lobby list:', lobbies);
+
+  if (!lobbies || lobbies.length === 0) {
+    lobbyList.innerHTML = '<div class="no-lobbies">No active lobbies</div>';
+    return;
+  }
+
+  lobbyList.innerHTML = '';
+
+  lobbies.forEach(lobby => {
+    const lobbyItem = document.createElement('div');
+    lobbyItem.className = `lobby-item ${lobby.playerCount >= 4 ? 'full' : ''}`;
+    lobbyItem.dataset.roomId = lobby.id;
+
+    lobbyItem.innerHTML = `
+            <div class="lobby-name">${lobby.id}</div>
+            <div class="lobby-players">
+                <span class="player-count">${lobby.playerCount}/4</span>
+                <span>players</span>
+            </div>
+        `;
+
+    // Add click handler if room isn't full
+    if (lobby.playerCount < 4) {
+      lobbyItem.addEventListener('click', () => handleLobbyClick(lobby.id));
+    }
+
+    lobbyList.appendChild(lobbyItem);
+  });
+}
+
+function handleLobbyClick(roomId) {
+  if (!connected) {
+    alert('Not connected to server!');
+    return;
+  }
+
+  const playerName = playerNameInput.value.trim() || 'Player';
+  joinRoom(roomId, playerName);
+}
+
+function requestLobbyList() {
+  if (socket && connected) {
+    socket.emit('requestLobbyList');
+  }
+}
+
+// Main menu functions
+function initializeMainMenu() {
+  quickPlayBtn.addEventListener('click', handleQuickPlay);
+  createRoomBtn.addEventListener('click', handleCreateRoom);
+  joinRoomBtn.addEventListener('click', handleJoinRoom);
+  refreshLobbiesBtn.addEventListener('click', requestLobbyList);
+
+  // Enter key handlers for inputs
+  roomNameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleCreateRoom();
+  });
+
+  joinRoomInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleJoinRoom();
+  });
+
+  // Request initial lobby list
+  setTimeout(() => {
+    requestLobbyList();
+  }, 500);
+}
+
+function handleQuickPlay() {
+  if (!connected) {
+    alert('Not connected to server!');
+    return;
+  }
+
+  const playerName = playerNameInput.value.trim() || 'Player';
+  joinRoom('quickplay', playerName);
+}
+
+function handleCreateRoom() {
+  const roomName = roomNameInput.value.trim();
+  if (!roomName) {
+    alert('Please enter a room name!');
+    return;
+  }
+
+  if (!connected) {
+    alert('Not connected to server!');
+    return;
+  }
+
+  const playerName = playerNameInput.value.trim() || 'Player';
+  joinRoom(roomName, playerName);
+}
+
+function handleJoinRoom() {
+  const roomName = joinRoomInput.value.trim();
+  if (!roomName) {
+    alert('Please enter a room name!');
+    return;
+  }
+
+  if (!connected) {
+    alert('Not connected to server!');
+    return;
+  }
+
+  const playerName = playerNameInput.value.trim() || 'Player';
+  joinRoom(roomName, playerName);
+}
+
+function joinRoom(roomName, playerName) {
+  currentRoomId = roomName;
+  myRoomName = roomName;
+
+  // Don't join a team yet, just join the room
+  socket.emit('joinRoom', {
+    roomId: roomName,
+    playerData: { name: playerName, team: null }
+  });
+}
+
+function leaveRoom() {
+  if (socket && currentRoomId) {
+    socket.emit('leaveRoom', { roomId: currentRoomId });
+  }
+
+  currentRoomId = null;
+  myRoomName = null;
+  inRoom = false;
+  showMainMenuScreen();
+}
+
 // Lobby functions
 function initializeLobby() {
   // Add click listeners to player slots
@@ -402,11 +593,12 @@ function initializeLobby() {
   // Add button listeners
   startGameBtn.addEventListener('click', startGame);
   backToLobbyBtn.addEventListener('click', backToLobby);
+  leaveLobbyBtn.addEventListener('click', leaveRoom);
 }
 
 function handleSlotClick(event) {
-  if (!connected) {
-    alert('Not connected to server!');
+  if (!connected || !inRoom) {
+    alert('Not connected or not in a room!');
     return;
   }
 
@@ -414,17 +606,10 @@ function handleSlotClick(event) {
   const team = slot.dataset.team;
 
   if (slot.classList.contains('empty')) {
-    // Join this team
-    const playerName = prompt('Enter your name:') || `Player ${Date.now()}`;
-
-    const playerData = {
-      name: playerName,
-      team: team
-    };
-
-    socket.emit('joinRoom', {
+    // Join this team (player is already in room)
+    socket.emit('joinTeam', {
       roomId: currentRoomId,
-      playerData: playerData
+      team: team
     });
   }
 }
@@ -439,7 +624,11 @@ function startGame() {
 }
 
 function backToLobby() {
-  showLobbyScreen();
+  if (inRoom) {
+    showLobbyScreen();
+  } else {
+    showMainMenuScreen();
+  }
   // Could emit 'leaveGame' to server if needed
 }
 
@@ -448,10 +637,11 @@ function init() {
   console.log('Boost Arena Multiplayer starting...');
 
   initNetwork();
+  initializeMainMenu();
   initializeLobby();
 
-  // Show lobby screen initially
-  showLobbyScreen();
+  // Show main menu initially
+  showMainMenuScreen();
 }
 
 // Start the initialization when page loads

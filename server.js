@@ -65,8 +65,8 @@ class GameRoom {
     const player = {
       id: socketId,
       name: playerData.name,
-      team: playerData.team,
-      x: playerData.team === 'red' ? 100 : GAME_CONFIG.CANVAS_WIDTH - 100,
+      team: playerData.team || null, // Allow no team initially
+      x: 100, // Default position, will be updated when team is selected
       y: GAME_CONFIG.CANVAS_HEIGHT / 2,
       boost: 100,
       keys: {},
@@ -359,6 +359,18 @@ class GameRoom {
   }
 }
 
+// Broadcast lobby list to all clients
+function broadcastLobbyList() {
+  const lobbies = Array.from(gameRooms.values()).map(room => ({
+    id: room.id,
+    playerCount: room.players.size,
+    gameState: room.gameState
+  }));
+
+  console.log('Broadcasting lobby list:', lobbies);
+  io.emit('lobbyListUpdate', lobbies);
+}
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
@@ -372,18 +384,98 @@ io.on('connection', (socket) => {
     }
 
     const room = gameRooms.get(roomId);
+
+    // Make sure socket joins room first
     socket.join(roomId);
 
-    // Add player to room
+    // Add player to room (no team initially)
     const player = room.addPlayer(socket.id, playerData);
 
-    // Send room state to player
+    // Send room state to joining player
     socket.emit('roomJoined', room.getState());
 
-    // Broadcast updated room state
-    io.to(roomId).emit('roomUpdate', room.getState());
+    // Small delay to ensure socket is fully joined, then broadcast to all
+    setTimeout(() => {
+      const roomState = room.getState();
+      console.log(`Broadcasting room update to ${roomId}:`, roomState);
+      io.to(roomId).emit('roomUpdate', roomState);
+    }, 10);
 
-    console.log(`Player ${playerData.name} joined room ${roomId} on team ${playerData.team}`);
+    console.log(`Player ${playerData.name} joined room ${roomId}`);
+
+    // Broadcast updated lobby list to all clients
+    broadcastLobbyList();
+  });
+
+  socket.on('joinTeam', (data) => {
+    const { roomId, team } = data;
+
+    // Find player's room
+    let playerRoom = null;
+    for (const room of gameRooms.values()) {
+      if (room.players.has(socket.id)) {
+        playerRoom = room;
+        break;
+      }
+    }
+
+    if (playerRoom) {
+      const player = playerRoom.players.get(socket.id);
+      if (player) {
+        player.team = team;
+        console.log(`Player ${player.name} joined team ${team} in room ${roomId}`);
+
+        // Broadcast updated room state
+        const roomState = playerRoom.getState();
+        io.to(roomId).emit('roomUpdate', roomState);
+
+        // Also broadcast updated lobby list
+        broadcastLobbyList();
+      }
+    }
+  });
+
+  socket.on('leaveRoom', (data) => {
+    const { roomId } = data;
+
+    // Find and remove player from room
+    let playerRoom = null;
+    for (const room of gameRooms.values()) {
+      if (room.players.has(socket.id)) {
+        playerRoom = room;
+        break;
+      }
+    }
+
+    if (playerRoom) {
+      const player = playerRoom.players.get(socket.id);
+      console.log(`Player ${player?.name || socket.id} left room ${roomId}`);
+
+      playerRoom.removePlayer(socket.id);
+      socket.leave(roomId);
+
+      // Broadcast updated room state if room still has players
+      if (playerRoom.players.size > 0) {
+        const roomState = playerRoom.getState();
+        io.to(roomId).emit('roomUpdate', roomState);
+      } else {
+        // Remove empty room
+        gameRooms.delete(roomId);
+      }
+
+      // Broadcast updated lobby list
+      broadcastLobbyList();
+    }
+  });
+
+  socket.on('requestLobbyList', () => {
+    const lobbies = Array.from(gameRooms.values()).map(room => ({
+      id: room.id,
+      playerCount: room.players.size,
+      gameState: room.gameState
+    }));
+
+    socket.emit('lobbyListUpdate', lobbies);
   });
 
   socket.on('playerInput', (data) => {
@@ -432,6 +524,9 @@ io.on('connection', (socket) => {
           // Remove empty room
           gameRooms.delete(room.id);
         }
+
+        // Broadcast updated lobby list
+        broadcastLobbyList();
         break;
       }
     }
