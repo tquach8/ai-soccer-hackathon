@@ -34,8 +34,9 @@ const GAME_CONFIG = {
 const gameRooms = new Map();
 
 class GameRoom {
-  constructor(roomId) {
+  constructor(roomId, ownerId) {
     this.id = roomId;
+    this.ownerId = ownerId; // The player who created the room
     this.players = new Map();
     this.gameState = 'lobby'; // 'lobby', 'playing', 'finished'
     this.scores = { red: 0, blue: 0 };
@@ -79,6 +80,13 @@ class GameRoom {
 
   removePlayer(socketId) {
     this.players.delete(socketId);
+
+    // If the owner left, transfer ownership to another player
+    if (this.ownerId === socketId && this.players.size > 0) {
+      this.ownerId = Array.from(this.players.keys())[0];
+      console.log(`Owner left room ${this.id}, transferring ownership to ${this.ownerId}`);
+    }
+
     if (this.players.size === 0) {
       this.stopGameLoop();
     }
@@ -343,6 +351,7 @@ class GameRoom {
   getState() {
     return {
       id: this.id,
+      ownerId: this.ownerId,
       players: Array.from(this.players.values()),
       gameState: this.gameState,
       scores: this.scores
@@ -364,7 +373,8 @@ function broadcastLobbyList() {
   const lobbies = Array.from(gameRooms.values()).map(room => ({
     id: room.id,
     playerCount: room.players.size,
-    gameState: room.gameState
+    gameState: room.gameState,
+    ownerId: room.ownerId
   }));
 
   console.log('Broadcasting lobby list:', lobbies);
@@ -380,7 +390,7 @@ io.on('connection', (socket) => {
 
     // Get or create room
     if (!gameRooms.has(roomId)) {
-      gameRooms.set(roomId, new GameRoom(roomId));
+      gameRooms.set(roomId, new GameRoom(roomId, socket.id)); // Owner is the first person to join
     }
 
     const room = gameRooms.get(roomId);
@@ -472,7 +482,8 @@ io.on('connection', (socket) => {
     const lobbies = Array.from(gameRooms.values()).map(room => ({
       id: room.id,
       playerCount: room.players.size,
-      gameState: room.gameState
+      gameState: room.gameState,
+      ownerId: room.ownerId
     }));
 
     socket.emit('lobbyListUpdate', lobbies);
@@ -504,8 +515,15 @@ io.on('connection', (socket) => {
     }
 
     if (playerRoom) {
-      playerRoom.startGame();
-      io.to(playerRoom.id).emit('gameStarted');
+      // Only allow the room owner to start the game
+      if (playerRoom.ownerId === socket.id) {
+        playerRoom.startGame();
+        io.to(playerRoom.id).emit('gameStarted');
+        console.log(`Game started in room ${playerRoom.id} by owner ${socket.id}`);
+      } else {
+        socket.emit('error', { message: 'Only the room owner can start the game' });
+        console.log(`Player ${socket.id} tried to start game but is not owner of room ${playerRoom.id}`);
+      }
     }
   });
 

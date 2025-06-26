@@ -105,6 +105,10 @@ function initNetwork() {
   socket.on('lobbyListUpdate', (lobbies) => {
     updateLobbyList(lobbies);
   });
+
+  socket.on('error', (errorData) => {
+    alert(errorData.message);
+  });
 }
 
 // Update lobby UI from server data
@@ -130,7 +134,10 @@ function updateLobbyFromServer(roomState) {
       const slot = redSlots[index];
       slot.classList.remove('empty');
       slot.classList.add('filled');
-      slot.querySelector('.slot-text').textContent = player.name;
+
+      // Add crown icon for owner
+      const displayName = player.id === roomState.ownerId ? `👑 ${player.name}` : player.name;
+      slot.querySelector('.slot-text').textContent = displayName;
     }
   });
 
@@ -141,26 +148,42 @@ function updateLobbyFromServer(roomState) {
       const slot = blueSlots[index];
       slot.classList.remove('empty');
       slot.classList.add('filled');
-      slot.querySelector('.slot-text').textContent = player.name;
+
+      // Add crown icon for owner
+      const displayName = player.id === roomState.ownerId ? `👑 ${player.name}` : player.name;
+      slot.querySelector('.slot-text').textContent = displayName;
     }
   });
 
   // Update unassigned players list
-  updateUnassignedPlayersList(unassignedPlayersData);
+  updateUnassignedPlayersList(unassignedPlayersData, roomState.ownerId);
 
-  // Update start button - only enable if we have players on teams
+  // Update start button - only show to owner and enable if we have players on teams
+  const isOwner = roomState.ownerId === myPlayerId;
   const playersOnTeams = redPlayers.length + bluePlayers.length;
-  startGameBtn.disabled = playersOnTeams === 0;
+
+  if (isOwner) {
+    startGameBtn.style.display = 'block';
+    startGameBtn.disabled = playersOnTeams === 0;
+  } else {
+    startGameBtn.style.display = 'none';
+  }
 
   const lobbyInfo = document.querySelector('.lobby-info');
-  if (playersOnTeams > 0) {
-    lobbyInfo.textContent = `${playersOnTeams} players on teams, ${unassignedPlayersData.length} waiting`;
+  if (isOwner) {
+    if (playersOnTeams > 0) {
+      lobbyInfo.textContent = `You can start the game! ${playersOnTeams} players on teams, ${unassignedPlayersData.length} waiting`;
+    } else {
+      lobbyInfo.textContent = 'Waiting for players to join teams...';
+    }
   } else {
-    lobbyInfo.textContent = 'Select teams to begin playing!';
+    const ownerPlayer = roomState.players.find(p => p.id === roomState.ownerId);
+    const ownerName = ownerPlayer ? ownerPlayer.name : 'Owner';
+    lobbyInfo.textContent = `Waiting for ${ownerName} 👑 to start the game... (${playersOnTeams} on teams, ${unassignedPlayersData.length} waiting)`;
   }
 }
 
-function updateUnassignedPlayersList(unassignedPlayersData) {
+function updateUnassignedPlayersList(unassignedPlayersData, ownerId) {
   // Show/hide the unassigned players section
   if (unassignedPlayersData.length > 0) {
     unassignedPlayers.style.display = 'block';
@@ -177,7 +200,9 @@ function updateUnassignedPlayersList(unassignedPlayersData) {
         playerElement.classList.add('local');
       }
 
-      playerElement.textContent = player.name;
+      // Add crown for owner and show their name
+      const displayName = player.id === ownerId ? `👑 ${player.name}` : player.name;
+      playerElement.textContent = displayName;
       unassignedPlayerList.appendChild(playerElement);
     });
   } else {
