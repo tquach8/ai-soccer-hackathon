@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Boost Arena</title>
+  <title>Blitz Ball</title>
   <style>
     body {
       margin: 0;
@@ -251,17 +251,20 @@
       max-width: 1400px;
       margin: 0 auto;
       padding: 20px;
+      align-items: flex-start;
     }
 
     .menu-container {
       flex: 1;
       max-width: 500px;
+      display: flex;
+      flex-direction: column;
     }
 
     .menu-container h2 {
       text-align: center;
-      margin-bottom: 40px;
-      font-size: 32px;
+      margin-bottom: 20px;
+      font-size: 20px;
       color: #44ff44;
     }
 
@@ -271,6 +274,8 @@
       border: 2px solid #444;
       border-radius: 8px;
       background: #2a2a2a;
+      display: flex;
+      flex-direction: column;
     }
 
     .menu-section h3 {
@@ -459,7 +464,8 @@
       border: 2px solid #444;
       border-radius: 8px;
       background: #2a2a2a;
-      height: fit-content;
+      display: flex;
+      flex-direction: column;
     }
 
     .lobby-browser h3 {
@@ -473,6 +479,7 @@
       max-height: 400px;
       overflow-y: auto;
       margin-bottom: 15px;
+      flex: 1;
     }
 
     .lobby-item {
@@ -561,11 +568,13 @@
     /* Authentication Styles */
     .auth-screen {
       max-width: 400px;
-      margin: 50px auto;
+      margin: 0 auto;
       padding: 30px;
       border: 2px solid #444;
       border-radius: 8px;
       background: #2a2a2a;
+      display: flex;
+      flex-direction: column;
     }
 
     .auth-screen h2 {
@@ -835,7 +844,8 @@
       border: 2px solid #444;
       border-radius: 8px;
       background: #2a2a2a;
-      height: fit-content;
+      display: flex;
+      flex-direction: column;
     }
 
     .leaderboard-section h3 {
@@ -852,6 +862,7 @@
     .leaderboard-list {
       max-height: 400px;
       overflow-y: auto;
+      flex: 1;
     }
 
     .leaderboard-item {
@@ -968,7 +979,7 @@
 </head>
 
 <body>
-  <h1>Boost Arena</h1>
+  <h1>Blitz Ball</h1>
 
   <!-- User Info (shown when logged in) -->
   <div id="userInfo" class="user-info" style="display: none;">
@@ -978,28 +989,44 @@
 
   <!-- Authentication Screen -->
   <div id="authScreen" class="screen">
-    <div class="auth-screen">
-      <h2 id="authTitle">Welcome to Boost Arena</h2>
+    <div
+      style="display: flex; gap: 30px; max-width: 1200px; margin: 0 auto; align-items: stretch; justify-content: center;">
+      <div class="auth-screen" style="flex: 1; max-width: 400px;">
+        <h2 id="authTitle">Welcome to Blitz Ball</h2>
 
-      <div id="authMessage"></div>
+        <div id="authMessage"></div>
 
-      <form id="authForm" class="auth-form">
-        <div class="form-group">
-          <label for="authUsername">Username</label>
-          <input type="text" id="authUsername" required minlength="3" maxlength="20" placeholder="Enter username">
+        <form id="authForm" class="auth-form">
+          <div class="form-group">
+            <label for="authUsername">Username</label>
+            <input type="text" id="authUsername" required minlength="3" maxlength="20" placeholder="Enter username">
+          </div>
+
+          <div class="form-group">
+            <label for="authPassword">Password</label>
+            <input type="password" id="authPassword" required minlength="6" placeholder="Enter password">
+          </div>
+
+          <button type="submit" id="authSubmitBtn" class="auth-btn">Login</button>
+        </form>
+
+        <div class="auth-switch">
+          <span id="authSwitchText">Don't have an account?</span>
+          <button type="button" id="authSwitchBtn">Register</button>
         </div>
 
-        <div class="form-group">
-          <label for="authPassword">Password</label>
-          <input type="password" id="authPassword" required minlength="6" placeholder="Enter password">
+        <div class="auth-switch" style="margin-top: 15px; border-top: 1px solid #444; padding-top: 15px;">
+          <span style="color: #aaa;">Just want to play?</span>
+          <button type="button" id="continueAsGuestBtn" style="color: #ffaa44;">Continue as Guest</button>
         </div>
+      </div>
 
-        <button type="submit" id="authSubmitBtn" class="auth-btn">Login</button>
-      </form>
-
-      <div class="auth-switch">
-        <span id="authSwitchText">Don't have an account?</span>
-        <button type="button" id="authSwitchBtn">Register</button>
+      <div class="leaderboard-section" style="flex: 1; max-width: 350px;">
+        <h3>🏆 Leaderboard</h3>
+        <div class="leaderboard-list" id="leaderboardList">
+          <div class="no-leaderboard">Loading...</div>
+        </div>
+        <button id="refreshLeaderboardBtn" class="leaderboard-refresh">🔄 Refresh</button>
       </div>
     </div>
   </div>
@@ -1008,23 +1035,37 @@
   <div id="mainMenuScreen" class="screen" style="display: none;">
     <div class="main-menu-layout">
       <div class="menu-container">
+        <h2 style="margin-top: 0;">🚀 Blitz Ball</h2>
+
         <div class="player-name-section">
           <label for="playerNameInput">Your Name:</label>
           <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="15" value="Player">
         </div>
 
-        <div class="menu-section">
-          <h3>Create Room</h3>
+        <div class="menu-section" id="createRoomSection" style="display: none;">
+          <h3>🎮 Create Room</h3>
           <div class="room-input-group">
             <input type="text" id="roomNameInput" placeholder="Enter room name" maxlength="20">
-            <button id="createRoomBtn" class="menu-btn">Create</button>
+            <button id="createRoomBtn" class="menu-btn primary">Create</button>
           </div>
           <p class="menu-info">Create a private room for friends</p>
+        </div>
+
+        <div class="menu-section" id="loginPromptSection">
+          <h3>📊 Unlock More Features!</h3>
+          <p class="menu-info"><strong>Log in to get:</strong></p>
+          <ul style="color: #aaa; font-size: 14px; margin: 10px 0; padding-left: 20px;">
+            <li>Create your own game rooms</li>
+            <li>Track wins and goals on the leaderboard</li>
+            <li>Secure your username</li>
+            <li>Persistent game statistics</li>
+          </ul>
+          <p class="menu-info">🎮 You can still join existing games as a guest!</p>
         </div>
       </div>
 
       <div class="lobby-browser">
-        <h3>Active Lobbies</h3>
+        <h3 style="margin-top: 0;">🎯 Active Lobbies</h3>
         <div class="lobby-list" id="lobbyList">
           <div class="no-lobbies">No active lobbies</div>
         </div>
@@ -1032,11 +1073,11 @@
       </div>
 
       <div class="leaderboard-section">
-        <h3>🏆 Leaderboard</h3>
-        <div class="leaderboard-list" id="leaderboardList">
+        <h3 style="margin-top: 0;">🏆 Leaderboard</h3>
+        <div class="leaderboard-list" id="mainLeaderboardList">
           <div class="no-leaderboard">Loading...</div>
         </div>
-        <button id="refreshLeaderboardBtn" class="leaderboard-refresh">🔄 Refresh</button>
+        <button id="mainRefreshLeaderboardBtn" class="leaderboard-refresh">🔄 Refresh</button>
       </div>
     </div>
   </div>

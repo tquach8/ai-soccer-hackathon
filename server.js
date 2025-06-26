@@ -975,7 +975,7 @@ async function startServer() {
   try {
     await initializeDatabase();
     server.listen(PORT, () => {
-      console.log(`🚀 Boost Arena multiplayer server running on port ${PORT}`);
+      console.log(`🚀 Blitz Ball multiplayer server running on port ${PORT}`);
       console.log(`🌐 Access the game at: http://localhost:${PORT}`);
     });
   } catch (error) {
@@ -984,4 +984,4 @@ async function startServer() {
   }
 }
 
-startServer(); 
+startServer();

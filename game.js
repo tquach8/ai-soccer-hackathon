@@ -610,7 +610,7 @@ function gameLoop() {
 
 // Initialize the game
 function init() {
-  console.log('Boost Arena starting...');
+  console.log('Blitz Ball starting...');
   initializeLobby();
 
   // Show lobby screen initially

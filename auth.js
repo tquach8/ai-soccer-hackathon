@@ -4,13 +4,54 @@ class AuthManager {
     this.currentUser = null;
     this.token = localStorage.getItem('authToken');
     this.isLoginMode = true;
+    this.isGuest = false;
 
     this.initializeElements();
     this.setupEventListeners();
 
+    // Initially hide all lobby functionality
+    this.hideAllLobbyFunctionality();
+
     // Check if user is already logged in
     if (this.token) {
       this.verifyToken();
+    }
+  }
+
+  hideAllLobbyFunctionality() {
+    // Hide main menu screen initially, show only auth screen with leaderboard
+    if (this.mainMenuScreen) {
+      this.mainMenuScreen.style.display = 'none';
+    }
+
+    // Hide specific authenticated features within main menu
+    if (this.createRoomSection) {
+      this.createRoomSection.style.display = 'none';
+    }
+    if (this.loginPromptSection) {
+      this.loginPromptSection.style.display = 'block';
+    }
+
+    // Hide additional lobby elements until authentication (but keep leaderboard visible)
+    if (this.playerNameSection) {
+      this.playerNameSection.style.display = 'none';
+    }
+    if (this.lobbyBrowser) {
+      this.lobbyBrowser.style.display = 'none';
+    }
+    // Hide main menu leaderboard by default
+    if (this.mainLeaderboardSection) {
+      this.mainLeaderboardSection.style.display = 'none';
+    }
+    // Auth screen leaderboard remains visible by default
+  }
+
+  hideAuthenticatedFeatures() {
+    if (this.createRoomSection) {
+      this.createRoomSection.style.display = 'none';
+    }
+    if (this.loginPromptSection) {
+      this.loginPromptSection.style.display = 'block';
     }
   }
 
@@ -23,16 +64,24 @@ class AuthManager {
     this.authSubmitBtn = document.getElementById('authSubmitBtn');
     this.authSwitchText = document.getElementById('authSwitchText');
     this.authSwitchBtn = document.getElementById('authSwitchBtn');
+    this.continueAsGuestBtn = document.getElementById('continueAsGuestBtn');
     this.authMessage = document.getElementById('authMessage');
     this.userInfo = document.getElementById('userInfo');
     this.userDisplay = document.getElementById('userDisplay');
     this.logoutBtn = document.getElementById('logoutBtn');
     this.mainMenuScreen = document.getElementById('mainMenuScreen');
+    this.createRoomSection = document.getElementById('createRoomSection');
+    this.loginPromptSection = document.getElementById('loginPromptSection');
+    this.playerNameSection = document.querySelector('.player-name-section');
+    this.lobbyBrowser = document.querySelector('.lobby-browser');
+    this.leaderboardSection = document.querySelector('.leaderboard-section');
+    this.mainLeaderboardSection = document.querySelector('#mainMenuScreen .leaderboard-section');
   }
 
   setupEventListeners() {
     this.authForm.addEventListener('submit', (e) => this.handleSubmit(e));
     this.authSwitchBtn.addEventListener('click', () => this.toggleMode());
+    this.continueAsGuestBtn.addEventListener('click', () => this.continueAsGuest());
     this.logoutBtn.addEventListener('click', () => this.logout());
   }
 
@@ -142,6 +191,22 @@ class AuthManager {
     this.authScreen.style.display = 'none';
     this.mainMenuScreen.style.display = 'block';
 
+    // Show authenticated features
+    this.createRoomSection.style.display = 'block';
+    this.loginPromptSection.style.display = 'none';
+
+    // Show lobby functionality
+    if (this.playerNameSection) {
+      this.playerNameSection.style.display = 'block';
+    }
+    if (this.lobbyBrowser) {
+      this.lobbyBrowser.style.display = 'block';
+    }
+    // Show leaderboard for authenticated users
+    if (this.mainLeaderboardSection) {
+      this.mainLeaderboardSection.style.display = 'block';
+    }
+
     // Update player name input with authenticated username
     const playerNameInput = document.getElementById('playerNameInput');
     if (playerNameInput) {
@@ -153,11 +218,28 @@ class AuthManager {
   logout() {
     this.token = null;
     this.currentUser = null;
+    this.isGuest = false;
     localStorage.removeItem('authToken');
 
     this.userInfo.style.display = 'none';
     this.mainMenuScreen.style.display = 'none';
     this.authScreen.style.display = 'block';
+
+    // Hide authenticated features
+    this.createRoomSection.style.display = 'none';
+    this.loginPromptSection.style.display = 'block';
+
+    // Hide lobby functionality
+    if (this.playerNameSection) {
+      this.playerNameSection.style.display = 'none';
+    }
+    if (this.lobbyBrowser) {
+      this.lobbyBrowser.style.display = 'none';
+    }
+    // Hide main menu leaderboard
+    if (this.mainLeaderboardSection) {
+      this.mainLeaderboardSection.style.display = 'none';
+    }
 
     // Reset form
     this.authForm.reset();
@@ -167,6 +249,7 @@ class AuthManager {
     const playerNameInput = document.getElementById('playerNameInput');
     if (playerNameInput) {
       playerNameInput.disabled = false;
+      playerNameInput.value = 'Player';
     }
   }
 
@@ -193,6 +276,35 @@ class AuthManager {
     this.authMessage.innerHTML = `<div class="${type}-message">${message}</div>`;
   }
 
+  continueAsGuest() {
+    this.isGuest = true;
+    this.authScreen.style.display = 'none';
+    this.mainMenuScreen.style.display = 'block';
+
+    // Hide authenticated features for guests
+    this.createRoomSection.style.display = 'none';
+    this.loginPromptSection.style.display = 'block';
+
+    // Show lobby functionality for guests
+    if (this.playerNameSection) {
+      this.playerNameSection.style.display = 'block';
+    }
+    if (this.lobbyBrowser) {
+      this.lobbyBrowser.style.display = 'block';
+    }
+    // Hide main menu leaderboard for guests (they saw it on auth screen)
+    if (this.mainLeaderboardSection) {
+      this.mainLeaderboardSection.style.display = 'none';
+    }
+
+    // Enable player name input for guests
+    const playerNameInput = document.getElementById('playerNameInput');
+    if (playerNameInput) {
+      playerNameInput.disabled = false;
+      playerNameInput.value = 'Player';
+    }
+  }
+
   // Get current user data for game integration
   getCurrentUser() {
     return this.currentUser;
@@ -206,6 +318,27 @@ class AuthManager {
   // Check if user is authenticated
   isAuthenticated() {
     return this.token && this.currentUser;
+  }
+
+  // Check if user is playing as guest
+  isPlayingAsGuest() {
+    return this.isGuest;
+  }
+
+  // Hide auth screen (called when guest joins lobby)
+  hideAuthScreen() {
+    if (this.isGuest && this.authScreen.style.display !== 'none') {
+      this.authScreen.style.display = 'none';
+    }
+  }
+
+  // Show auth screen (called when returning to main menu) - Modified to not hide main menu for guests
+  showAuthScreenIfGuest() {
+    // Only show auth screen if user is not authenticated and not a guest who has already accessed the lobby
+    if (!this.isAuthenticated() && !this.isGuest) {
+      this.authScreen.style.display = 'block';
+      this.mainMenuScreen.style.display = 'none';
+    }
   }
 }
 

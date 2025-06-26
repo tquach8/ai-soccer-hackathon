@@ -25,7 +25,9 @@ const refreshLobbiesBtn = document.getElementById('refreshLobbiesBtn');
 
 // Leaderboard elements
 const leaderboardList = document.getElementById('leaderboardList');
+const mainLeaderboardList = document.getElementById('mainLeaderboardList');
 const refreshLeaderboardBtn = document.getElementById('refreshLeaderboardBtn');
+const mainRefreshLeaderboardBtn = document.getElementById('mainRefreshLeaderboardBtn');
 
 // Lobby elements
 const startGameBtn = document.getElementById('startGameBtn');
@@ -100,6 +102,11 @@ function initNetwork() {
     inRoom = true;
     showLobbyScreen();
     updateLobbyFromServer(roomState);
+
+    // Hide auth screen if guest joined a lobby
+    if (authManager && authManager.isPlayingAsGuest()) {
+      authManager.hideAuthScreen();
+    }
   });
 
   socket.on('roomUpdate', (roomState) => {
@@ -249,15 +256,23 @@ function showGameScreen() {
 
 // Show main menu screen
 function showMainMenuScreen() {
-  mainMenuScreen.style.display = 'block';
-  lobbyScreen.style.display = 'none';
-  gameScreen.style.display = 'none';
-  winningScreen.style.display = 'none';
+  // Check if guest should see auth screen instead
+  if (authManager && authManager.isPlayingAsGuest() && !authManager.isAuthenticated()) {
+    authManager.showAuthScreenIfGuest();
+    lobbyScreen.style.display = 'none';
+    gameScreen.style.display = 'none';
+    winningScreen.style.display = 'none';
+  } else {
+    mainMenuScreen.style.display = 'block';
+    lobbyScreen.style.display = 'none';
+    gameScreen.style.display = 'none';
+    winningScreen.style.display = 'none';
 
-  // Refresh leaderboard when showing main menu
-  setTimeout(() => {
-    fetchLeaderboard();
-  }, 100);
+    // Refresh leaderboard when showing main menu
+    setTimeout(() => {
+      fetchLeaderboard();
+    }, 100);
+  }
 }
 
 // Show lobby screen
@@ -701,47 +716,60 @@ async function fetchLeaderboard() {
       updateLeaderboardDisplay(leaderboard);
     } else {
       console.error('Failed to fetch leaderboard:', leaderboard.error);
-      leaderboardList.innerHTML = '<div class="no-leaderboard">Failed to load leaderboard</div>';
+      // Update both leaderboard lists with error message
+      const errorMessage = '<div class="no-leaderboard">Failed to load leaderboard</div>';
+      if (leaderboardList) leaderboardList.innerHTML = errorMessage;
+      if (mainLeaderboardList) mainLeaderboardList.innerHTML = errorMessage;
     }
   } catch (error) {
     console.error('Error fetching leaderboard:', error);
-    leaderboardList.innerHTML = '<div class="no-leaderboard">Failed to load leaderboard</div>';
+    // Update both leaderboard lists with error message
+    const errorMessage = '<div class="no-leaderboard">Failed to load leaderboard</div>';
+    if (leaderboardList) leaderboardList.innerHTML = errorMessage;
+    if (mainLeaderboardList) mainLeaderboardList.innerHTML = errorMessage;
   }
 }
 
 function updateLeaderboardDisplay(leaderboard) {
+  const leaderboardLists = [leaderboardList, mainLeaderboardList].filter(list => list);
+
   if (leaderboard.length === 0) {
-    leaderboardList.innerHTML = '<div class="no-leaderboard">No players have completed games yet</div>';
+    const noDataMessage = '<div class="no-leaderboard">No players have completed games yet</div>';
+    leaderboardLists.forEach(list => {
+      list.innerHTML = noDataMessage;
+    });
     return;
   }
 
-  leaderboardList.innerHTML = '';
+  leaderboardLists.forEach(list => {
+    list.innerHTML = '';
 
-  leaderboard.forEach((player, index) => {
-    const rank = index + 1;
-    const leaderboardItem = document.createElement('div');
-    leaderboardItem.className = `leaderboard-item`;
+    leaderboard.forEach((player, index) => {
+      const rank = index + 1;
+      const leaderboardItem = document.createElement('div');
+      leaderboardItem.className = `leaderboard-item`;
 
-    // Add special styling for top 3
-    if (rank <= 3) {
-      leaderboardItem.classList.add('top-3', `rank-${rank}`);
-    }
+      // Add special styling for top 3
+      if (rank <= 3) {
+        leaderboardItem.classList.add('top-3', `rank-${rank}`);
+      }
 
-    // Format win rate
-    const winRate = player.win_rate || 0;
+      // Format win rate
+      const winRate = player.win_rate || 0;
 
-    leaderboardItem.innerHTML = `
-      <div class="player-info">
-        <span class="player-rank">#${rank}</span>
-        <span class="player-username">${player.username}</span>
-      </div>
-      <div class="player-stats">
-        <div class="stat-wins">${player.total_wins} wins</div>
-        <div class="stat-goals">${player.total_goals} goals</div>
-      </div>
-    `;
+      leaderboardItem.innerHTML = `
+        <div class="player-info">
+          <span class="player-rank">#${rank}</span>
+          <span class="player-username">${player.username}</span>
+        </div>
+        <div class="player-stats">
+          <div class="stat-wins">${player.total_wins} wins</div>
+          <div class="stat-goals">${player.total_goals} goals</div>
+        </div>
+      `;
 
-    leaderboardList.appendChild(leaderboardItem);
+      list.appendChild(leaderboardItem);
+    });
   });
 }
 
@@ -750,6 +778,9 @@ function initializeMainMenu() {
   createRoomBtn.addEventListener('click', handleCreateRoom);
   refreshLobbiesBtn.addEventListener('click', requestLobbyList);
   refreshLeaderboardBtn.addEventListener('click', fetchLeaderboard);
+  if (mainRefreshLeaderboardBtn) {
+    mainRefreshLeaderboardBtn.addEventListener('click', fetchLeaderboard);
+  }
 
   // Enter key handlers for inputs
   roomNameInput.addEventListener('keypress', (e) => {
@@ -870,7 +901,7 @@ function backToLobby() {
 
 // Initialize everything
 function init() {
-  console.log('Boost Arena Multiplayer starting...');
+  console.log('Blitz Ball Multiplayer starting...');
 
   initNetwork();
   initializeMainMenu();
