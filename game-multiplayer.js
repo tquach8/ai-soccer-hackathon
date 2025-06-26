@@ -274,28 +274,35 @@ function updateLobbyFromServer(roomState) {
   // Update unassigned players list
   updateUnassignedPlayersList(unassignedPlayersData, roomState.ownerId);
 
-  // Update start button - only show to owner and enable if we have players on teams
+  // Update start button - only show to owner and enable if we have players on each team
   const isOwner = roomState.ownerId === myPlayerId;
   const playersOnTeams = redPlayers.length + bluePlayers.length;
+  const canStartGame = redPlayers.length > 0 && bluePlayers.length > 0; // Need at least 1 player per team
 
   if (isOwner) {
     startGameBtn.style.display = 'block';
-    startGameBtn.disabled = playersOnTeams === 0;
+    startGameBtn.disabled = !canStartGame;
   } else {
     startGameBtn.style.display = 'none';
   }
 
   const lobbyInfo = document.querySelector('.lobby-info');
   if (isOwner) {
-    if (playersOnTeams > 0) {
+    if (canStartGame) {
       lobbyInfo.textContent = `You can start the game! ${playersOnTeams} players on teams, ${unassignedPlayersData.length} waiting`;
-    } else {
+    } else if (playersOnTeams === 0) {
       lobbyInfo.textContent = 'Waiting for players to join teams...';
+    } else {
+      lobbyInfo.textContent = `Need players on both teams to start! Red: ${redPlayers.length}, Blue: ${bluePlayers.length}`;
     }
   } else {
     const ownerPlayer = roomState.players.find(p => p.id === roomState.ownerId);
     const ownerName = ownerPlayer ? ownerPlayer.name : 'Owner';
-    lobbyInfo.textContent = `Waiting for ${ownerName} 👑 to start the game... (${playersOnTeams} on teams, ${unassignedPlayersData.length} waiting)`;
+    if (canStartGame) {
+      lobbyInfo.textContent = `Waiting for ${ownerName} 👑 to start the game... (${playersOnTeams} on teams, ${unassignedPlayersData.length} waiting)`;
+    } else {
+      lobbyInfo.textContent = `Waiting for players on both teams... Red: ${redPlayers.length}, Blue: ${bluePlayers.length}`;
+    }
   }
 }
 

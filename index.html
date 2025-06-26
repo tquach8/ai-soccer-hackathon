@@ -1044,6 +1044,56 @@
       box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
     }
 
+    /* User Info & Logout Button Styles */
+    .user-info {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 12px 20px;
+      background: linear-gradient(145deg, rgba(0, 50, 100, 0.3), rgba(0, 20, 40, 0.5));
+      border: 2px solid #00ffff;
+      border-radius: 25px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+    }
+
+    .user-info span {
+      color: #00ffff;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    .logout-btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      background: linear-gradient(45deg, #ff0066, #ff3399);
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 0 15px rgba(255, 0, 102, 0.4);
+    }
+
+    .logout-btn:hover {
+      background: linear-gradient(45deg, #ff3399, #ff0066);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 25px rgba(255, 0, 102, 0.6);
+    }
+
+    .logout-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 0 15px rgba(255, 0, 102, 0.4);
+    }
+
     /* Leaderboard Styles */
     .leaderboard-section {
       flex: 1;
