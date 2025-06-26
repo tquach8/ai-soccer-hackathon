@@ -26,7 +26,10 @@ function initAudio() {
 
 // Play kick sound
 function playKickSound() {
-  if (!audioContext) return;
+  if (!audioContext) {
+    console.log('No audio context for kick sound');
+    return;
+  }
 
   try {
     const oscillator = audioContext.createOscillator();
@@ -35,16 +38,18 @@ function playKickSound() {
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
-    // Kick sound: quick low frequency thump
-    oscillator.frequency.setValueAtTime(80, audioContext.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(40, audioContext.currentTime + 0.1);
+    // Kick sound: more pronounced thump
+    oscillator.frequency.setValueAtTime(120, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(60, audioContext.currentTime + 0.15);
 
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime); // Increased volume
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
 
     oscillator.type = 'sine';
     oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.2);
+    oscillator.stop(audioContext.currentTime + 0.25);
+
+    console.log('Kick sound played successfully');
   } catch (e) {
     console.log('Error playing kick sound:', e);
   }
@@ -328,6 +333,11 @@ function showGameScreen() {
   gameScreen.style.display = 'block';
   winningScreen.style.display = 'none';
 
+  // Initialize audio for game sounds
+  if (!audioContext) {
+    initAudio();
+  }
+
   // Start render loop
   renderLoop();
 }
@@ -509,15 +519,21 @@ function updateClientGameState() {
     );
 
     // If ball velocity changed significantly (indicating a kick)
-    if (velocityChange > 3) {
+    if (velocityChange > 1) { // Lowered from 3 to 1 for more sensitivity
       // Check if any player is close enough to the ball to have kicked it
-      const kickDistance = 35; // Maximum distance for a kick
-      const ballKicked = gameState.players.some(player => {
+      const kickDistance = 45; // Increased from 35 (player radius 20 + ball radius 15 + buffer 10)
+      let ballKicked = false;
+      let kickingPlayer = null;
+
+      gameState.players.forEach(player => {
         const distance = Math.sqrt(
           Math.pow(player.x - gameState.ball.x, 2) +
           Math.pow(player.y - gameState.ball.y, 2)
         );
-        return distance < kickDistance;
+        if (distance < kickDistance) {
+          ballKicked = true;
+          kickingPlayer = player.name;
+        }
       });
 
       if (ballKicked) {
@@ -525,6 +541,7 @@ function updateClientGameState() {
         if (!audioContext) {
           initAudio();
         }
+        console.log(`Ball kicked by ${kickingPlayer}, velocity change: ${velocityChange.toFixed(2)}`);
         playKickSound();
       }
     }
