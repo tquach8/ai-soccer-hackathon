@@ -187,6 +187,35 @@ function updateUserStats(userId, won, goals) {
   });
 }
 
+// Update user stats by username after game
+function updateUserStatsByUsername(username, won, goals) {
+  return new Promise((resolve, reject) => {
+    const winIncrement = won ? 1 : 0;
+    const lossIncrement = won ? 0 : 1;
+
+    db.run(
+      `UPDATE users SET 
+       total_wins = total_wins + ?,
+       total_losses = total_losses + ?,
+       total_goals = total_goals + ?,
+       total_games = total_games + 1
+       WHERE username = ?`,
+      [winIncrement, lossIncrement, goals, username],
+      function (err) {
+        if (err) {
+          reject({ error: 'Failed to update stats' });
+        } else {
+          if (this.changes === 0) {
+            resolve({ message: 'User not found in database' });
+          } else {
+            resolve({ message: 'Stats updated successfully' });
+          }
+        }
+      }
+    );
+  });
+}
+
 // Get leaderboard
 function getLeaderboard(limit = 10) {
   return new Promise((resolve, reject) => {
@@ -216,6 +245,7 @@ module.exports = {
   verifyToken,
   getUserStats,
   updateUserStats,
+  updateUserStatsByUsername,
   getLeaderboard,
   db
 }; 

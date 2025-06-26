@@ -23,6 +23,10 @@ const playerNameInput = document.getElementById('playerNameInput');
 const lobbyList = document.getElementById('lobbyList');
 const refreshLobbiesBtn = document.getElementById('refreshLobbiesBtn');
 
+// Leaderboard elements
+const leaderboardList = document.getElementById('leaderboardList');
+const refreshLeaderboardBtn = document.getElementById('refreshLeaderboardBtn');
+
 // Lobby elements
 const startGameBtn = document.getElementById('startGameBtn');
 const backToLobbyBtn = document.getElementById('backToLobbyBtn');
@@ -249,6 +253,11 @@ function showMainMenuScreen() {
   lobbyScreen.style.display = 'none';
   gameScreen.style.display = 'none';
   winningScreen.style.display = 'none';
+
+  // Refresh leaderboard when showing main menu
+  setTimeout(() => {
+    fetchLeaderboard();
+  }, 100);
 }
 
 // Show lobby screen
@@ -682,19 +691,75 @@ function requestLobbyList() {
   }
 }
 
+// Leaderboard management
+async function fetchLeaderboard() {
+  try {
+    const response = await fetch('/api/leaderboard?limit=10');
+    const leaderboard = await response.json();
+
+    if (response.ok) {
+      updateLeaderboardDisplay(leaderboard);
+    } else {
+      console.error('Failed to fetch leaderboard:', leaderboard.error);
+      leaderboardList.innerHTML = '<div class="no-leaderboard">Failed to load leaderboard</div>';
+    }
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error);
+    leaderboardList.innerHTML = '<div class="no-leaderboard">Failed to load leaderboard</div>';
+  }
+}
+
+function updateLeaderboardDisplay(leaderboard) {
+  if (leaderboard.length === 0) {
+    leaderboardList.innerHTML = '<div class="no-leaderboard">No players have completed games yet</div>';
+    return;
+  }
+
+  leaderboardList.innerHTML = '';
+
+  leaderboard.forEach((player, index) => {
+    const rank = index + 1;
+    const leaderboardItem = document.createElement('div');
+    leaderboardItem.className = `leaderboard-item`;
+
+    // Add special styling for top 3
+    if (rank <= 3) {
+      leaderboardItem.classList.add('top-3', `rank-${rank}`);
+    }
+
+    // Format win rate
+    const winRate = player.win_rate || 0;
+
+    leaderboardItem.innerHTML = `
+      <div class="player-info">
+        <span class="player-rank">#${rank}</span>
+        <span class="player-username">${player.username}</span>
+      </div>
+      <div class="player-stats">
+        <div class="stat-wins">${player.total_wins} wins</div>
+        <div class="stat-goals">${player.total_goals} goals</div>
+      </div>
+    `;
+
+    leaderboardList.appendChild(leaderboardItem);
+  });
+}
+
 // Main menu functions
 function initializeMainMenu() {
   createRoomBtn.addEventListener('click', handleCreateRoom);
   refreshLobbiesBtn.addEventListener('click', requestLobbyList);
+  refreshLeaderboardBtn.addEventListener('click', fetchLeaderboard);
 
   // Enter key handlers for inputs
   roomNameInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleCreateRoom();
   });
 
-  // Request initial lobby list
+  // Request initial data
   setTimeout(() => {
     requestLobbyList();
+    fetchLeaderboard();
   }, 500);
 }
 
@@ -760,6 +825,10 @@ function initializeLobby() {
   backToMenuBtn.addEventListener('click', () => {
     leaveRoom();
     showMainMenuScreen();
+    // Refresh leaderboard to show updated stats
+    setTimeout(() => {
+      fetchLeaderboard();
+    }, 1000);
   });
 }
 

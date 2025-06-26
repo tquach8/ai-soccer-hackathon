@@ -9,6 +9,7 @@ const {
   verifyToken,
   getUserStats,
   updateUserStats,
+  updateUserStatsByUsername,
   getLeaderboard
 } = require('./database');
 
@@ -633,7 +634,7 @@ class GameRoom {
     }
   }
 
-  endGame(winningTeam) {
+  async endGame(winningTeam) {
     this.gameState = 'finished';
     this.stopGameLoop();
 
@@ -644,8 +645,33 @@ class GameRoom {
       playerStats: this.getPlayerStats()
     };
 
+    // Update user statistics in database
+    await this.updatePlayerStatsInDatabase(winningTeam);
+
     // Broadcast game end
     io.to(this.id).emit('gameEnded', gameResults);
+  }
+
+  async updatePlayerStatsInDatabase(winningTeam) {
+    // Get all authenticated players (those with usernames that exist in database)
+    const authenticatedPlayers = Array.from(this.players.values()).filter(player =>
+      player.name && player.team && (player.team === 'red' || player.team === 'blue')
+    );
+
+    // Update stats for each authenticated player
+    for (const player of authenticatedPlayers) {
+      try {
+        const won = player.team === winningTeam;
+        const goals = this.playerGoals.get(player.id) || 0;
+
+        // Only update if this appears to be a registered user (has a proper username)
+        if (player.name && player.name !== 'Player' && player.name.length >= 3) {
+          await updateUserStatsByUsername(player.name, won, goals);
+        }
+      } catch (error) {
+        console.error(`Failed to update stats for player ${player.name}:`, error);
+      }
+    }
   }
 
   returnToLobby() {
