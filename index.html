@@ -557,14 +557,188 @@
       background: #55ff55;
       transform: translateY(-2px);
     }
+
+    /* Authentication Styles */
+    .auth-screen {
+      max-width: 400px;
+      margin: 50px auto;
+      padding: 30px;
+      border: 2px solid #444;
+      border-radius: 8px;
+      background: #2a2a2a;
+    }
+
+    .auth-screen h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 28px;
+      color: #44ff44;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      margin-bottom: 8px;
+      color: #44ff44;
+      font-weight: bold;
+    }
+
+    .form-group input {
+      padding: 12px;
+      font-size: 16px;
+      background: #333;
+      color: white;
+      border: 2px solid #555;
+      border-radius: 6px;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #44ff44;
+    }
+
+    .auth-btn {
+      padding: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      background: #44ff44;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .auth-btn:hover {
+      background: #55ff55;
+      transform: translateY(-2px);
+    }
+
+    .auth-btn:disabled {
+      background: #666;
+      color: #aaa;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .auth-switch {
+      text-align: center;
+      margin-top: 20px;
+      color: #aaa;
+    }
+
+    .auth-switch button {
+      background: none;
+      border: none;
+      color: #44ff44;
+      cursor: pointer;
+      text-decoration: underline;
+      font-size: 16px;
+    }
+
+    .auth-switch button:hover {
+      color: #55ff55;
+    }
+
+    .error-message {
+      background: #ff4444;
+      color: white;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .success-message {
+      background: #44ff44;
+      color: #000;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .user-info {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #2a2a2a;
+      border: 2px solid #444;
+      border-radius: 6px;
+      padding: 10px 15px;
+      color: #44ff44;
+      font-size: 14px;
+    }
+
+    .logout-btn {
+      background: #ff4444;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 10px;
+      font-size: 12px;
+    }
+
+    .logout-btn:hover {
+      background: #ff5555;
+    }
   </style>
 </head>
 
 <body>
   <h1>Boost Arena</h1>
 
+  <!-- User Info (shown when logged in) -->
+  <div id="userInfo" class="user-info" style="display: none;">
+    <span id="userDisplay">Welcome, Player!</span>
+    <button id="logoutBtn" class="logout-btn">Logout</button>
+  </div>
+
+  <!-- Authentication Screen -->
+  <div id="authScreen" class="screen">
+    <div class="auth-screen">
+      <h2 id="authTitle">Welcome to Boost Arena</h2>
+
+      <div id="authMessage"></div>
+
+      <form id="authForm" class="auth-form">
+        <div class="form-group">
+          <label for="authUsername">Username</label>
+          <input type="text" id="authUsername" required minlength="3" maxlength="20" placeholder="Enter username">
+        </div>
+
+        <div class="form-group">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" required minlength="6" placeholder="Enter password">
+        </div>
+
+        <button type="submit" id="authSubmitBtn" class="auth-btn">Login</button>
+      </form>
+
+      <div class="auth-switch">
+        <span id="authSwitchText">Don't have an account?</span>
+        <button type="button" id="authSwitchBtn">Register</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Menu Screen -->
-  <div id="mainMenuScreen" class="screen">
+  <div id="mainMenuScreen" class="screen" style="display: none;">
     <div class="main-menu-layout">
       <div class="menu-container">
         <div class="player-name-section">
@@ -689,6 +863,7 @@
   </div>
 
   <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+  <script src="auth.js"></script>
   <script src="game-multiplayer.js"></script>
 </body>
 

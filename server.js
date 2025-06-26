@@ -2,6 +2,15 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+const {
+  initializeDatabase,
+  registerUser,
+  loginUser,
+  verifyToken,
+  getUserStats,
+  updateUserStats,
+  getLeaderboard
+} = require('./database');
 
 const app = express();
 const server = http.createServer(app);
@@ -12,8 +21,94 @@ const io = socketIo(server, {
   }
 });
 
+// Middleware
+app.use(express.json());
+
 // Serve static files
 app.use(express.static(path.join(__dirname)));
+
+// Authentication routes
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    if (username.length < 3 || username.length > 20) {
+      return res.status(400).json({ error: 'Username must be between 3 and 20 characters' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const result = await registerUser(username, password);
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(400).json(error);
+  }
+});
+
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    const result = await loginUser(username, password);
+    res.json(result);
+  } catch (error) {
+    res.status(401).json(error);
+  }
+});
+
+app.get('/api/stats/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const stats = await getUserStats(userId);
+    res.json(stats);
+  } catch (error) {
+    res.status(404).json(error);
+  }
+});
+
+app.get('/api/leaderboard', async (req, res) => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+    const leaderboard = await getLeaderboard(limit);
+    res.json(leaderboard);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+// Auth middleware for protected routes
+const authMiddleware = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+      throw new Error();
+    }
+    const decoded = await verifyToken(token);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Please authenticate' });
+  }
+};
+
+app.get('/api/me', authMiddleware, async (req, res) => {
+  try {
+    const stats = await getUserStats(req.user.id);
+    res.json({ ...req.user, ...stats });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
 
 // Game constants (match client-side)
 const GAME_CONFIG = {
@@ -739,7 +834,19 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Boost Arena multiplayer server running on port ${PORT}`);
-  console.log(`🌐 Access the game at: http://localhost:${PORT}`);
-}); 
+
+// Initialize database and start server
+async function startServer() {
+  try {
+    await initializeDatabase();
+    server.listen(PORT, () => {
+      console.log(`🚀 Boost Arena multiplayer server running on port ${PORT}`);
+      console.log(`🌐 Access the game at: http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    process.exit(1);
+  }
+}
+
+startServer(); 
