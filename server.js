@@ -255,6 +255,9 @@ class GameRoom {
     player.x += dx * speed;
     player.y += dy * speed;
 
+    // Check player-to-player collisions
+    this.handlePlayerCollisions(player);
+
     // Center line restriction during kickoff
     if (this.kickoffActive) {
       const centerLine = dimensions.width / 2;
@@ -301,6 +304,37 @@ class GameRoom {
 
     // Check boost pad collisions
     this.checkBoostPadCollisions(player);
+  }
+
+  handlePlayerCollisions(currentPlayer) {
+    const playerRadius = 20;
+    const minDistance = playerRadius * 2; // Two player radii
+
+    // Check collision with all other players
+    this.players.forEach(otherPlayer => {
+      // Skip checking against self
+      if (otherPlayer.id === currentPlayer.id) return;
+
+      const dist = this.distance(currentPlayer, otherPlayer);
+
+      if (dist < minDistance && dist > 0) {
+        // Calculate overlap
+        const overlap = minDistance - dist;
+        const angle = Math.atan2(otherPlayer.y - currentPlayer.y, otherPlayer.x - currentPlayer.x);
+
+        // Separate players by half the overlap each
+        const separateX = Math.cos(angle) * overlap * 0.5;
+        const separateY = Math.sin(angle) * overlap * 0.5;
+
+        // Move current player away from other player
+        currentPlayer.x -= separateX;
+        currentPlayer.y -= separateY;
+
+        // Move other player away from current player
+        otherPlayer.x += separateX;
+        otherPlayer.y += separateY;
+      }
+    });
   }
 
   updateBall(deltaTime) {
