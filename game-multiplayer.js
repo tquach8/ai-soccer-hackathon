@@ -238,6 +238,11 @@ function showLobbyScreen() {
 
 // Input handling
 document.addEventListener('keydown', (e) => {
+  // Only handle game input when actually in the game screen
+  if (gameScreen.style.display !== 'block') {
+    return;
+  }
+
   const key = e.key.toLowerCase();
   keys[key] = true;
 
@@ -250,6 +255,11 @@ document.addEventListener('keydown', (e) => {
 });
 
 document.addEventListener('keyup', (e) => {
+  // Only handle game input when actually in the game screen
+  if (gameScreen.style.display !== 'block') {
+    return;
+  }
+
   const key = e.key.toLowerCase();
   keys[key] = false;
 
