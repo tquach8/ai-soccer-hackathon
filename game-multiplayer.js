@@ -194,9 +194,15 @@ function initNetwork() {
     updateLobbyFromServer(roomState);
   });
 
-  socket.on('gameStarted', () => {
+  socket.on('gameStarted', (gameStartData) => {
     console.log('Game started!');
     gameState.gameState = 'playing';
+
+    // Set owner ID if provided
+    if (gameStartData && gameStartData.ownerId) {
+      gameState.ownerId = gameStartData.ownerId;
+    }
+
     showGameScreen();
   });
 
@@ -206,6 +212,9 @@ function initNetwork() {
 
     // Update local player reference for prediction
     localPlayer = gameState.players.find(p => p.id === myPlayerId);
+
+    // Update back to lobby button visibility based on owner status
+    updateBackToLobbyButton();
 
     updateClientGameState();
   });
@@ -217,6 +226,13 @@ function initNetwork() {
   socket.on('gameEnded', (gameResults) => {
     console.log('Game ended:', gameResults);
     showWinningScreen(gameResults);
+  });
+
+  socket.on('returnedToLobby', (roomState) => {
+    console.log('Everyone returned to lobby by room owner');
+    gameState.gameState = 'lobby';
+    showLobbyScreen();
+    updateLobbyFromServer(roomState);
   });
 
   socket.on('error', (errorData) => {
@@ -337,6 +353,9 @@ function showGameScreen() {
   gameScreen.style.display = 'block';
   winningScreen.style.display = 'none';
 
+  // Update button visibility based on owner status
+  updateBackToLobbyButton();
+
   // Initialize audio for game sounds
   if (!audioContext) {
     initAudio();
@@ -344,6 +363,18 @@ function showGameScreen() {
 
   // Start render loop
   renderLoop();
+}
+
+// Update back to lobby button visibility
+function updateBackToLobbyButton() {
+  if (gameScreen.style.display === 'block') {
+    const isOwner = gameState.ownerId === myPlayerId;
+    if (isOwner) {
+      backToLobbyBtn.style.display = 'block';
+    } else {
+      backToLobbyBtn.style.display = 'none';
+    }
+  }
 }
 
 // Show main menu screen
@@ -676,23 +707,29 @@ function render() {
   function drawCyberGoal(x, y, width, height, isLeft) {
     ctx.save();
 
-    // Goal base with subtle gradient
+    // Team colors: left goal = red team, right goal = blue team
+    const primaryColor = isLeft ? '#cc3366' : '#3366cc';
+    const secondaryColor = isLeft ? '#ff4477' : '#4477ff';
+    const accentColor = isLeft ? '#ffcc44' : '#44ccff';
+    const outlineColor = isLeft ? '#ff6666' : '#6666ff';
+
+    // Goal base with team-colored gradient
     const goalGradient = ctx.createLinearGradient(x, y, x + width, y);
-    goalGradient.addColorStop(0, '#cc3366');
-    goalGradient.addColorStop(0.5, '#ff4477');
-    goalGradient.addColorStop(1, '#cc3366');
+    goalGradient.addColorStop(0, primaryColor);
+    goalGradient.addColorStop(0.5, secondaryColor);
+    goalGradient.addColorStop(1, primaryColor);
     ctx.fillStyle = goalGradient;
     ctx.fillRect(x, y, width, height);
 
-    // Subtle goal glow
-    ctx.shadowColor = '#ff4477';
+    // Team-colored goal glow
+    ctx.shadowColor = secondaryColor;
     ctx.shadowBlur = 12;
     ctx.fillRect(x, y, width, height);
 
-    // Simple energy lines inside goal
-    ctx.strokeStyle = '#ffcc44';
+    // Simple energy lines inside goal with team accent color
+    ctx.strokeStyle = accentColor;
     ctx.lineWidth = 1;
-    ctx.shadowColor = '#ffcc44';
+    ctx.shadowColor = accentColor;
     ctx.shadowBlur = 4;
 
     const numLines = 3;
@@ -704,19 +741,19 @@ function render() {
       ctx.stroke();
     }
 
-    // Goal post outline
-    ctx.strokeStyle = '#00cccc';
+    // Goal post outline with team color
+    ctx.strokeStyle = outlineColor;
     ctx.lineWidth = 2;
-    ctx.shadowColor = '#00cccc';
+    ctx.shadowColor = outlineColor;
     ctx.shadowBlur = 6;
     ctx.strokeRect(x, y, width, height);
 
     ctx.restore();
   }
 
-  // Draw goals
-  drawCyberGoal(0, mapHeight / 2 - goalHeight / 2, 20, goalHeight, true);
-  drawCyberGoal(mapWidth - 20, mapHeight / 2 - goalHeight / 2, 20, goalHeight, false);
+  // Draw goals with team colors
+  drawCyberGoal(0, mapHeight / 2 - goalHeight / 2, 20, goalHeight, true);  // Red team goal
+  drawCyberGoal(mapWidth - 20, mapHeight / 2 - goalHeight / 2, 20, goalHeight, false);  // Blue team goal
 
   // Draw cleaner boost pads
   gameState.boostPads.forEach((pad, index) => {
@@ -1195,12 +1232,18 @@ function startGame() {
 }
 
 function backToLobby() {
-  if (inRoom) {
-    showLobbyScreen();
-  } else {
-    showMainMenuScreen();
+  if (!connected || !currentRoomId) {
+    alert('Not connected to server!');
+    return;
   }
-  // Could emit 'leaveGame' to server if needed
+
+  // Only room owner can send everyone back to lobby
+  const isOwner = gameState.ownerId === myPlayerId;
+  if (isOwner) {
+    socket.emit('returnToLobby', { roomId: currentRoomId });
+  } else {
+    alert('Only the room owner can return everyone to lobby!');
+  }
 }
 
 // Initialize everything

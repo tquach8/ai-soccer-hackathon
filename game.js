@@ -21,8 +21,8 @@ const BALL_FRICTION = 0.995; // Increased from 0.99 - ball slows down faster
 const WALL_BOUNCE = 0.3;
 const BOOST_DRAIN_RATE = 1; // per frame while boosting
 const BOOST_REGEN_RATE = 0.05; // per frame when not boosting (much slower)
-const HIT_FORCE = 0.8; // Much gentler base hit force
-const BOOST_HIT_MULTIPLIER = 1.3; // Further reduced for controlled gameplay
+const HIT_FORCE = 0.6; // Much gentler base hit force
+const BOOST_HIT_MULTIPLIER = 1.2; // Further reduced for controlled gameplay
 
 // Game state
 const keys = {};
@@ -343,9 +343,13 @@ function render() {
 
   ctx.setLineDash([]);
 
-  // Draw goals
+  // Draw goals with team colors
+  // Left goal - Red team
   ctx.fillStyle = '#ff4444';
   ctx.fillRect(goals.left.x, goals.left.y, goals.left.width, goals.left.height);
+
+  // Right goal - Blue team  
+  ctx.fillStyle = '#4444ff';
   ctx.fillRect(goals.right.x, goals.right.y, goals.right.width, goals.right.height);
 
   // Draw boost pads

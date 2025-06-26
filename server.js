@@ -127,8 +127,8 @@ const GAME_CONFIG = {
   BOOST_SPEED: 2.7,
   BALL_FRICTION: 0.995,
   WALL_BOUNCE: 0.3,
-  HIT_FORCE: 0.8,
-  BOOST_HIT_MULTIPLIER: 1.3,
+  HIT_FORCE: 0.6,
+  BOOST_HIT_MULTIPLIER: 1.2,
   BOOST_DRAIN_RATE: 1,
   BOOST_REGEN_RATE: 0.05,
   TICK_RATE: 120,
@@ -752,6 +752,7 @@ class GameRoom {
       scores: this.scores,
       boostPads: this.boostPads,
       gameState: this.gameState,
+      ownerId: this.ownerId,
       kickoffActive: this.kickoffActive,
       kickoffTeam: this.kickoffTeam,
       mapDimensions: dimensions,
@@ -935,11 +936,39 @@ io.on('connection', (socket) => {
       // Only allow the room owner to start the game
       if (playerRoom.ownerId === socket.id) {
         playerRoom.startGame();
-        io.to(playerRoom.id).emit('gameStarted');
+        io.to(playerRoom.id).emit('gameStarted', { ownerId: playerRoom.ownerId });
         console.log(`Game started in room ${playerRoom.id} by owner ${socket.id}`);
       } else {
         socket.emit('error', { message: 'Only the room owner can start the game' });
         console.log(`Player ${socket.id} tried to start game but is not owner of room ${playerRoom.id}`);
+      }
+    }
+  });
+
+  socket.on('returnToLobby', (data) => {
+    const { roomId } = data;
+
+    // Find player's room
+    let playerRoom = null;
+    for (const room of gameRooms.values()) {
+      if (room.players.has(socket.id)) {
+        playerRoom = room;
+        break;
+      }
+    }
+
+    if (playerRoom) {
+      // Only allow the room owner to return everyone to lobby
+      if (playerRoom.ownerId === socket.id) {
+        playerRoom.returnToLobby();
+        io.to(playerRoom.id).emit('returnedToLobby', playerRoom.getState());
+        console.log(`All players returned to lobby in room ${playerRoom.id} by owner ${socket.id}`);
+
+        // Update lobby list since game state changed
+        broadcastLobbyList();
+      } else {
+        socket.emit('error', { message: 'Only the room owner can return everyone to lobby' });
+        console.log(`Player ${socket.id} tried to return to lobby but is not owner of room ${playerRoom.id}`);
       }
     }
   });
