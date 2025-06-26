@@ -28,9 +28,6 @@ class AuthManager {
     if (this.createRoomSection) {
       this.createRoomSection.style.display = 'none';
     }
-    if (this.loginPromptSection) {
-      this.loginPromptSection.style.display = 'block';
-    }
 
     // Hide additional lobby elements until authentication (but keep leaderboard visible)
     if (this.playerNameSection) {
@@ -49,9 +46,6 @@ class AuthManager {
   hideAuthenticatedFeatures() {
     if (this.createRoomSection) {
       this.createRoomSection.style.display = 'none';
-    }
-    if (this.loginPromptSection) {
-      this.loginPromptSection.style.display = 'block';
     }
   }
 
@@ -74,7 +68,6 @@ class AuthManager {
     this.gameScreen = document.getElementById('gameScreen');
     this.winningScreen = document.getElementById('winningScreen');
     this.createRoomSection = document.getElementById('createRoomSection');
-    this.loginPromptSection = document.getElementById('loginPromptSection');
     this.playerNameSection = document.querySelector('.player-name-section');
     this.lobbyBrowser = document.querySelector('.lobby-browser');
     this.leaderboardSection = document.querySelector('.leaderboard-section');
@@ -196,7 +189,6 @@ class AuthManager {
 
     // Show authenticated features
     this.createRoomSection.style.display = 'block';
-    this.loginPromptSection.style.display = 'none';
 
     // Show lobby functionality
     if (this.playerNameSection) {
@@ -246,7 +238,6 @@ class AuthManager {
 
     // Hide authenticated features
     this.createRoomSection.style.display = 'none';
-    this.loginPromptSection.style.display = 'block';
 
     // Hide lobby functionality
     if (this.playerNameSection) {
@@ -302,7 +293,6 @@ class AuthManager {
 
     // Hide authenticated features for guests
     this.createRoomSection.style.display = 'none';
-    this.loginPromptSection.style.display = 'block';
 
     // Show lobby functionality for guests
     if (this.playerNameSection) {
