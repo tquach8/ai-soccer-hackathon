@@ -393,7 +393,6 @@ function showMainMenuScreen() {
     gameScreen.style.display = 'none';
     winningScreen.style.display = 'none';
   } else {
-    mainMenuScreen.style.display = 'block';
     lobbyScreen.style.display = 'none';
     gameScreen.style.display = 'none';
     winningScreen.style.display = 'none';

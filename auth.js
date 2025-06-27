@@ -9,6 +9,9 @@ class AuthManager {
     this.initializeElements();
     this.setupEventListeners();
 
+    // Force initial screen state - ensure main menu is hidden
+    this.forceInitialScreenState();
+
     // Initially hide all lobby functionality
     this.hideAllLobbyFunctionality();
 
@@ -18,6 +21,25 @@ class AuthManager {
     // Check if user is already logged in
     if (this.token) {
       this.verifyToken();
+    }
+  }
+
+  forceInitialScreenState() {
+    // Force auth screen to be visible and main menu to be hidden
+    if (this.authScreen) {
+      this.authScreen.style.display = 'block';
+    }
+    if (this.mainMenuScreen) {
+      this.mainMenuScreen.style.display = 'none';
+    }
+    if (this.lobbyScreen) {
+      this.lobbyScreen.style.display = 'none';
+    }
+    if (this.gameScreen) {
+      this.gameScreen.style.display = 'none';
+    }
+    if (this.winningScreen) {
+      this.winningScreen.style.display = 'none';
     }
   }
 
@@ -69,8 +91,8 @@ class AuthManager {
     this.continueAsGuestBtn = document.getElementById('continueAsGuestBtn');
     this.authMessage = document.getElementById('authMessage');
     this.userInfo = document.getElementById('userInfo');
-    this.userDisplay = document.getElementById('userDisplay');
-    this.logoutBtn = document.getElementById('logoutBtn');
+    this.userDisplay = document.getElementById('userDisplayMain');
+    this.logoutBtn = document.getElementById('logoutBtnMain');
     this.mainMenuScreen = document.getElementById('mainMenuScreen');
     this.lobbyScreen = document.getElementById('lobbyScreen');
     this.gameScreen = document.getElementById('gameScreen');
@@ -204,8 +226,13 @@ class AuthManager {
       userDisplayMain.textContent = `Welcome, ${this.currentUser.username}!`;
     }
 
-    this.authScreen.style.display = 'none';
-    this.mainMenuScreen.style.display = 'block';
+    // Force screen transition - hide auth and show main menu
+    if (this.authScreen) {
+      this.authScreen.style.display = 'none';
+    }
+    if (this.mainMenuScreen) {
+      this.mainMenuScreen.style.display = 'block';
+    }
 
     // Show user info in header
     const userInfo = document.getElementById('userInfo');
@@ -262,14 +289,26 @@ class AuthManager {
     localStorage.removeItem('authToken');
 
     // Hide user info
-    this.userInfo.style.display = 'none';
+    if (this.userInfo) {
+      this.userInfo.style.display = 'none';
+    }
 
-    // Hide ALL screens and show only auth screen
-    this.mainMenuScreen.style.display = 'none';
-    this.lobbyScreen.style.display = 'none';
-    this.gameScreen.style.display = 'none';
-    this.winningScreen.style.display = 'none';
-    this.authScreen.style.display = 'block';
+    // Force screen state - hide ALL screens and show only auth screen
+    if (this.mainMenuScreen) {
+      this.mainMenuScreen.style.display = 'none';
+    }
+    if (this.lobbyScreen) {
+      this.lobbyScreen.style.display = 'none';
+    }
+    if (this.gameScreen) {
+      this.gameScreen.style.display = 'none';
+    }
+    if (this.winningScreen) {
+      this.winningScreen.style.display = 'none';
+    }
+    if (this.authScreen) {
+      this.authScreen.style.display = 'block';
+    }
 
     // Leave room and disconnect from game if connected
     if (typeof leaveRoom === 'function') {
@@ -322,61 +361,16 @@ class AuthManager {
   toggleMode() {
     this.isLoginMode = !this.isLoginMode;
 
-    const authScreenElement = document.querySelector('.auth-screen');
-
     if (this.isLoginMode) {
       this.authTitle.textContent = 'Welcome Back';
       this.authSubmitBtn.textContent = 'Login';
       this.authSwitchText.textContent = "Don't have an account?";
       this.authSwitchBtn.textContent = 'Register';
-
-      // Login mode styling - green sports theme
-      authScreenElement.classList.remove('register-mode');
-      authScreenElement.style.borderColor = '#4caf50';
-      authScreenElement.style.boxShadow = '0 0 40px rgba(76, 175, 80, 0.3)';
-      this.authTitle.style.color = '#4caf50';
-      this.authTitle.style.textShadow = '0 0 20px rgba(76, 175, 80, 0.8)';
-      this.authSubmitBtn.style.background = 'linear-gradient(135deg, #4caf50, #45a049)';
-      this.authSubmitBtn.style.boxShadow = '0 4px 16px rgba(76, 175, 80, 0.3)';
-
-      // Login hover effects
-      this.authSubmitBtn.onmouseenter = () => {
-        this.authSubmitBtn.style.background = 'linear-gradient(135deg, #45a049, #4caf50)';
-        this.authSubmitBtn.style.transform = 'translateY(-2px)';
-        this.authSubmitBtn.style.boxShadow = '0 6px 20px rgba(76, 175, 80, 0.4)';
-      };
-      this.authSubmitBtn.onmouseleave = () => {
-        this.authSubmitBtn.style.background = 'linear-gradient(135deg, #4caf50, #45a049)';
-        this.authSubmitBtn.style.transform = 'translateY(0)';
-        this.authSubmitBtn.style.boxShadow = '0 4px 16px rgba(76, 175, 80, 0.3)';
-      };
-
     } else {
       this.authTitle.textContent = '🎮 Create New Account';
       this.authSubmitBtn.textContent = 'Create Account';
       this.authSwitchText.textContent = 'Already have an account?';
       this.authSwitchBtn.textContent = 'Back to Login';
-
-      // Register mode styling - green sports theme
-      authScreenElement.classList.add('register-mode');
-      authScreenElement.style.borderColor = '#4caf50';
-      authScreenElement.style.boxShadow = '0 0 40px rgba(76, 175, 80, 0.3)';
-      this.authTitle.style.color = '#4caf50';
-      this.authTitle.style.textShadow = '0 0 20px rgba(76, 175, 80, 0.8)';
-      this.authSubmitBtn.style.background = 'linear-gradient(135deg, #4caf50, #45a049)';
-      this.authSubmitBtn.style.boxShadow = '0 4px 16px rgba(76, 175, 80, 0.3)';
-
-      // Register hover effects
-      this.authSubmitBtn.onmouseenter = () => {
-        this.authSubmitBtn.style.background = 'linear-gradient(135deg, #45a049, #4caf50)';
-        this.authSubmitBtn.style.transform = 'translateY(-2px)';
-        this.authSubmitBtn.style.boxShadow = '0 6px 20px rgba(76, 175, 80, 0.4)';
-      };
-      this.authSubmitBtn.onmouseleave = () => {
-        this.authSubmitBtn.style.background = 'linear-gradient(135deg, #4caf50, #45a049)';
-        this.authSubmitBtn.style.transform = 'translateY(0)';
-        this.authSubmitBtn.style.boxShadow = '0 4px 16px rgba(76, 175, 80, 0.3)';
-      };
     }
 
     this.authMessage.innerHTML = '';
@@ -388,29 +382,19 @@ class AuthManager {
   }
 
   updateModeDisplay() {
-    // Ensure proper styling for the current mode on page load
-    const authScreenElement = document.querySelector('.auth-screen');
-    if (authScreenElement) {
-      if (this.isLoginMode) {
-        authScreenElement.classList.remove('register-mode');
-        authScreenElement.style.borderColor = '#4caf50';
-        authScreenElement.style.boxShadow = '0 0 40px rgba(76, 175, 80, 0.3)';
-        if (this.authTitle) {
-          this.authTitle.style.color = '#4caf50';
-          this.authTitle.style.textShadow = '0 0 20px rgba(76, 175, 80, 0.8)';
-        }
-        if (this.authSubmitBtn) {
-          this.authSubmitBtn.style.background = 'linear-gradient(135deg, #4caf50, #45a049)';
-          this.authSubmitBtn.style.boxShadow = '0 4px 16px rgba(76, 175, 80, 0.3)';
-        }
-      }
-    }
+    // Mode display is now handled by CSS classes
   }
 
   continueAsGuest() {
     this.isGuest = true;
-    this.authScreen.style.display = 'none';
-    this.mainMenuScreen.style.display = 'block';
+
+    // Force screen transition - hide auth and show main menu
+    if (this.authScreen) {
+      this.authScreen.style.display = 'none';
+    }
+    if (this.mainMenuScreen) {
+      this.mainMenuScreen.style.display = 'block';
+    }
 
     // Hide authenticated features for guests
     this.createRoomSection.style.display = 'none';
