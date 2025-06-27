@@ -321,14 +321,20 @@ function updateBall() {
 
 // Render everything
 function render() {
-  // Clear canvas
-  ctx.fillStyle = '#2a4a2a';
+  // Clear canvas with modern gradient background
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, '#1e3a1e');
+  gradient.addColorStop(0.5, '#2d4a2d');
+  gradient.addColorStop(1, '#1e3a1e');
+  ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw field lines
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([5, 5]);
+  // Draw modern field lines with glassmorphism effect
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([8, 6]);
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.3)';
+  ctx.shadowBlur = 5;
 
   // Center line
   ctx.beginPath();
@@ -341,144 +347,249 @@ function render() {
   ctx.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2);
   ctx.stroke();
 
-  ctx.setLineDash([]);
+  // Draw corner arcs for style
+  const cornerRadius = 30;
+  ctx.beginPath();
+  ctx.arc(0, 0, cornerRadius, 0, Math.PI / 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(canvas.width, 0, cornerRadius, Math.PI / 2, Math.PI);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, canvas.height, cornerRadius, -Math.PI / 2, 0);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(canvas.width, canvas.height, cornerRadius, Math.PI, -Math.PI / 2);
+  ctx.stroke();
 
-  // Draw goals with team colors
+  ctx.setLineDash([]);
+  ctx.shadowBlur = 0;
+
+  // Draw modern goals with gradient and glow effects
   // Left goal - Red team
-  ctx.fillStyle = '#ff4444';
+  const redGradient = ctx.createLinearGradient(goals.left.x, goals.left.y, goals.left.x + goals.left.width, goals.left.y + goals.left.height);
+  redGradient.addColorStop(0, '#e74c3c');
+  redGradient.addColorStop(0.5, '#c0392b');
+  redGradient.addColorStop(1, '#a93226');
+  ctx.fillStyle = redGradient;
+  ctx.shadowColor = '#e74c3c';
+  ctx.shadowBlur = 15;
   ctx.fillRect(goals.left.x, goals.left.y, goals.left.width, goals.left.height);
 
   // Right goal - Blue team  
-  ctx.fillStyle = '#4444ff';
+  const blueGradient = ctx.createLinearGradient(goals.right.x, goals.right.y, goals.right.x + goals.right.width, goals.right.y + goals.right.height);
+  blueGradient.addColorStop(0, '#3498db');
+  blueGradient.addColorStop(0.5, '#2980b9');
+  blueGradient.addColorStop(1, '#1f4e79');
+  ctx.fillStyle = blueGradient;
+  ctx.shadowColor = '#3498db';
+  ctx.shadowBlur = 15;
   ctx.fillRect(goals.right.x, goals.right.y, goals.right.width, goals.right.height);
 
-  // Draw boost pads
+  ctx.shadowBlur = 0;
+
+  // Draw modern boost pads with glassmorphism effect
   boostPads.forEach(pad => {
     if (pad.active) {
-      // Active boost pad - glowing green
-      ctx.fillStyle = '#44ff44';
-      ctx.shadowColor = '#44ff44';
-      ctx.shadowBlur = 15;
+      // Active boost pad - modern glowing design
+      const boostGradient = ctx.createRadialGradient(pad.x, pad.y, 0, pad.x, pad.y, pad.radius);
+      boostGradient.addColorStop(0, 'rgba(46, 204, 113, 0.9)');
+      boostGradient.addColorStop(0.7, 'rgba(39, 174, 96, 0.7)');
+      boostGradient.addColorStop(1, 'rgba(39, 174, 96, 0.3)');
+      ctx.fillStyle = boostGradient;
+      ctx.shadowColor = '#2ecc71';
+      ctx.shadowBlur = 20;
       ctx.beginPath();
       ctx.arc(pad.x, pad.y, pad.radius, 0, Math.PI * 2);
       ctx.fill();
+
+      // Add inner highlight
       ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.beginPath();
+      ctx.arc(pad.x, pad.y, pad.radius * 0.6, 0, Math.PI * 2);
+      ctx.fill();
 
-      // Add "B" text
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 16px Arial';
+      // Add "⚡" symbol instead of "B"
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 18px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('B', pad.x, pad.y + 5);
+      ctx.shadowColor = '#2ecc71';
+      ctx.shadowBlur = 5;
+      ctx.fillText('⚡', pad.x, pad.y + 6);
+      ctx.shadowBlur = 0;
     } else {
-      // Inactive boost pad - gray with cooldown
-      ctx.fillStyle = '#666666';
+      // Inactive boost pad - modern cooldown design
+      const inactiveGradient = ctx.createRadialGradient(pad.x, pad.y, 0, pad.x, pad.y, pad.radius);
+      inactiveGradient.addColorStop(0, 'rgba(108, 117, 125, 0.8)');
+      inactiveGradient.addColorStop(0.7, 'rgba(73, 80, 87, 0.6)');
+      inactiveGradient.addColorStop(1, 'rgba(73, 80, 87, 0.3)');
+      ctx.fillStyle = inactiveGradient;
       ctx.beginPath();
       ctx.arc(pad.x, pad.y, pad.radius, 0, Math.PI * 2);
       ctx.fill();
 
-      // Show cooldown progress
+      // Show cooldown progress with modern arc
       const progress = 1 - (pad.cooldown / pad.maxCooldown);
-      ctx.fillStyle = '#44ff44';
+      const progressGradient = ctx.createRadialGradient(pad.x, pad.y, 0, pad.x, pad.y, pad.radius);
+      progressGradient.addColorStop(0, 'rgba(46, 204, 113, 0.8)');
+      progressGradient.addColorStop(1, 'rgba(39, 174, 96, 0.5)');
+      ctx.fillStyle = progressGradient;
       ctx.beginPath();
       ctx.arc(pad.x, pad.y, pad.radius, -Math.PI / 2, -Math.PI / 2 + (progress * Math.PI * 2));
       ctx.lineTo(pad.x, pad.y);
       ctx.fill();
 
-      // Add faded "B" text
-      ctx.fillStyle = '#333333';
+      // Add faded symbol
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
       ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('B', pad.x, pad.y + 5);
+      ctx.fillText('⚡', pad.x, pad.y + 5);
     }
   });
 
-  // Draw ball trail
-  ctx.globalAlpha = 0.3;
+  // Draw modern ball trail with gradient
   ball.trail.forEach((point, index) => {
-    const alpha = index / ball.trail.length;
-    ctx.globalAlpha = alpha * 0.5;
-    ctx.fillStyle = ball.color;
+    const alpha = (index / ball.trail.length) * 0.6;
+    const trailGradient = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, ball.radius * alpha);
+    trailGradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+    trailGradient.addColorStop(0.5, `rgba(255, 255, 255, ${alpha * 0.7})`);
+    trailGradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
+    ctx.fillStyle = trailGradient;
     ctx.beginPath();
-    ctx.arc(point.x, point.y, ball.radius * alpha, 0, Math.PI * 2);
+    ctx.arc(point.x, point.y, ball.radius * alpha * 0.8, 0, Math.PI * 2);
     ctx.fill();
   });
-  ctx.globalAlpha = 1;
 
-  // Draw ball
-  ctx.fillStyle = ball.color;
+  // Draw modern ball with gradient and glow
+  const ballGradient = ctx.createRadialGradient(ball.x - ball.radius * 0.3, ball.y - ball.radius * 0.3, 0, ball.x, ball.y, ball.radius);
+  ballGradient.addColorStop(0, '#ffffff');
+  ballGradient.addColorStop(0.4, '#f8f9fa');
+  ballGradient.addColorStop(0.8, '#e9ecef');
+  ballGradient.addColorStop(1, '#dee2e6');
+
+  const speed = Math.sqrt(ball.vx ** 2 + ball.vy ** 2);
+
+  // Add glow effect based on speed
+  if (speed > 3) {
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+    ctx.shadowBlur = Math.min(speed * 2, 25);
+  }
+
+  ctx.fillStyle = ballGradient;
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
   ctx.fill();
 
-  // Draw ball glow if moving fast
-  const speed = Math.sqrt(ball.vx ** 2 + ball.vy ** 2);
-  if (speed > 5) {
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  }
+  // Add inner highlight for 3D effect
+  ctx.shadowBlur = 0;
+  const highlightGradient = ctx.createRadialGradient(ball.x - ball.radius * 0.4, ball.y - ball.radius * 0.4, 0, ball.x - ball.radius * 0.2, ball.y - ball.radius * 0.2, ball.radius * 0.6);
+  highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+  highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = highlightGradient;
+  ctx.beginPath();
+  ctx.arc(ball.x - ball.radius * 0.3, ball.y - ball.radius * 0.3, ball.radius * 0.4, 0, Math.PI * 2);
+  ctx.fill();
 
-  // Draw player
+  // Draw modern player with gradient effects
   const isBoosting = keys['shift'] && player.boost > 0;
   const isKicking = keys[' '];
 
-  // Determine player color and effects
-  let playerColor = player.color;
-  let shadowColor = null;
-  let shadowBlur = 0;
-  let strokeColor = null;
-  let strokeWidth = 0;
+  // Create base player gradient
+  const playerGradient = ctx.createRadialGradient(
+    player.x - player.radius * 0.3,
+    player.y - player.radius * 0.3,
+    0,
+    player.x,
+    player.y,
+    player.radius
+  );
 
   if (isKicking) {
-    // Kicking effect - bright white highlight with red glow
-    playerColor = '#ffffff';
-    shadowColor = '#ff4444';
-    shadowBlur = 20;
-    strokeColor = '#ffff44';
-    strokeWidth = 4;
+    // Kicking effect - bright energetic colors
+    playerGradient.addColorStop(0, '#ffffff');
+    playerGradient.addColorStop(0.3, '#fff3cd');
+    playerGradient.addColorStop(0.7, '#ffc107');
+    playerGradient.addColorStop(1, '#ff8f00');
+    ctx.shadowColor = '#ffc107';
+    ctx.shadowBlur = 25;
   } else if (isBoosting) {
-    // Boosting effect
-    playerColor = player.boostColor;
-    shadowColor = player.boostColor;
-    shadowBlur = 15;
-  }
-
-  // Apply shadow if needed
-  if (shadowColor) {
-    ctx.shadowColor = shadowColor;
-    ctx.shadowBlur = shadowBlur;
+    // Boosting effect - orange/yellow energy
+    playerGradient.addColorStop(0, '#fff3e0');
+    playerGradient.addColorStop(0.3, '#ffcc02');
+    playerGradient.addColorStop(0.7, '#ff9800');
+    playerGradient.addColorStop(1, '#f57c00');
+    ctx.shadowColor = '#ff9800';
+    ctx.shadowBlur = 20;
+  } else {
+    // Normal state - blue gradient
+    playerGradient.addColorStop(0, '#e3f2fd');
+    playerGradient.addColorStop(0.3, '#64b5f6');
+    playerGradient.addColorStop(0.7, '#2196f3');
+    playerGradient.addColorStop(1, '#1976d2');
   }
 
   // Draw player circle
-  ctx.fillStyle = playerColor;
+  ctx.fillStyle = playerGradient;
   ctx.beginPath();
   ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
   ctx.fill();
 
-  // Draw stroke if kicking
-  if (strokeColor) {
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = strokeWidth;
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-
-  // Reset shadow
+  // Add inner highlight for 3D effect
   ctx.shadowBlur = 0;
-
-  // Draw player direction indicator
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 3;
+  const playerHighlight = ctx.createRadialGradient(
+    player.x - player.radius * 0.4,
+    player.y - player.radius * 0.4,
+    0,
+    player.x - player.radius * 0.2,
+    player.y - player.radius * 0.2,
+    player.radius * 0.6
+  );
+  playerHighlight.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+  playerHighlight.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = playerHighlight;
   ctx.beginPath();
-  const lookX = player.x + Math.cos(Math.atan2(ball.y - player.y, ball.x - player.x)) * (player.radius + 5);
-  const lookY = player.y + Math.sin(Math.atan2(ball.y - player.y, ball.x - player.x)) * (player.radius + 5);
+  ctx.arc(player.x - player.radius * 0.3, player.y - player.radius * 0.3, player.radius * 0.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Draw modern direction indicator
+  const angle = Math.atan2(ball.y - player.y, ball.x - player.x);
+  const indicatorLength = player.radius + 8;
+  const lookX = player.x + Math.cos(angle) * indicatorLength;
+  const lookY = player.y + Math.sin(angle) * indicatorLength;
+
+  // Create gradient for direction line
+  const lineGradient = ctx.createLinearGradient(player.x, player.y, lookX, lookY);
+  lineGradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
+  lineGradient.addColorStop(1, 'rgba(255, 255, 255, 0.8)');
+
+  ctx.strokeStyle = lineGradient;
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+  ctx.shadowBlur = 3;
+  ctx.beginPath();
   ctx.moveTo(player.x, player.y);
   ctx.lineTo(lookX, lookY);
   ctx.stroke();
+
+  // Add arrowhead
+  const arrowSize = 6;
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+  ctx.beginPath();
+  ctx.moveTo(lookX, lookY);
+  ctx.lineTo(
+    lookX - arrowSize * Math.cos(angle - Math.PI / 6),
+    lookY - arrowSize * Math.sin(angle - Math.PI / 6)
+  );
+  ctx.lineTo(
+    lookX - arrowSize * Math.cos(angle + Math.PI / 6),
+    lookY - arrowSize * Math.sin(angle + Math.PI / 6)
+  );
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
 }
 
 // Update boost UI

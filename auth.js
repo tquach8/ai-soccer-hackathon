@@ -219,11 +219,15 @@ class AuthManager {
   }
 
   showLoginSuccess() {
-    // Update both user displays
+    // Update all user displays across screens
     this.userDisplay.textContent = `Welcome, ${this.currentUser.username}!`;
     const userDisplayMain = document.getElementById('userDisplayMain');
     if (userDisplayMain) {
       userDisplayMain.textContent = `Welcome, ${this.currentUser.username}!`;
+    }
+    const userDisplayGame = document.getElementById('userDisplayGame');
+    if (userDisplayGame) {
+      userDisplayGame.textContent = `Welcome, ${this.currentUser.username}!`;
     }
 
     // Force screen transition - hide auth and show main menu
@@ -234,10 +238,14 @@ class AuthManager {
       this.mainMenuScreen.style.display = 'block';
     }
 
-    // Show user info in header
+    // Show user info in header across all screens
     const userInfo = document.getElementById('userInfo');
     if (userInfo) {
       userInfo.style.display = 'flex';
+    }
+    const userInfoGame = document.getElementById('userInfoGame');
+    if (userInfoGame) {
+      userInfoGame.style.display = 'flex';
     }
 
     // Show authenticated features
