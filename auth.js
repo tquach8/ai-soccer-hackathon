@@ -27,29 +27,28 @@ class AuthManager {
       this.mainMenuScreen.style.display = 'none';
     }
 
-    // Explicitly hide menu-container to prevent it from showing on auth screen
-    const menuContainer = document.querySelector('.menu-container');
-    if (menuContainer) {
-      menuContainer.style.display = 'none';
-    }
-
-    // Hide specific authenticated features within main menu
+    // Hide authenticated features
     if (this.createRoomSection) {
       this.createRoomSection.style.display = 'none';
     }
 
-    // Hide additional lobby elements until authentication (but keep leaderboard visible)
-    if (this.playerNameSection) {
-      this.playerNameSection.style.display = 'none';
+    // Hide room creation controls
+    const roomCreationControls = document.getElementById('roomCreationControls');
+    if (roomCreationControls) {
+      roomCreationControls.style.display = 'none';
     }
-    if (this.lobbyBrowser) {
-      this.lobbyBrowser.style.display = 'none';
+
+    // Hide online members card
+    const onlineMembersCard = document.getElementById('onlineMembersCard');
+    if (onlineMembersCard) {
+      onlineMembersCard.style.display = 'none';
     }
-    // Hide main menu leaderboard by default
-    if (this.mainLeaderboardSection) {
-      this.mainLeaderboardSection.style.display = 'none';
+
+    // Hide user info in header
+    const userInfo = document.getElementById('userInfo');
+    if (userInfo) {
+      userInfo.style.display = 'none';
     }
-    // Auth screen leaderboard remains visible by default
   }
 
   hideAuthenticatedFeatures() {
@@ -88,6 +87,12 @@ class AuthManager {
     this.authSwitchBtn.addEventListener('click', () => this.toggleMode());
     this.continueAsGuestBtn.addEventListener('click', () => this.continueAsGuest());
     this.logoutBtn.addEventListener('click', () => this.logout());
+
+    // Also add logout listener for main screen
+    const logoutBtnMain = document.getElementById('logoutBtnMain');
+    if (logoutBtnMain) {
+      logoutBtnMain.addEventListener('click', () => this.logout());
+    }
   }
 
   async handleSubmit(e) {
@@ -192,39 +197,43 @@ class AuthManager {
   }
 
   showLoginSuccess() {
+    // Update both user displays
     this.userDisplay.textContent = `Welcome, ${this.currentUser.username}!`;
-    this.userInfo.style.display = 'block';
+    const userDisplayMain = document.getElementById('userDisplayMain');
+    if (userDisplayMain) {
+      userDisplayMain.textContent = `Welcome, ${this.currentUser.username}!`;
+    }
+
     this.authScreen.style.display = 'none';
     this.mainMenuScreen.style.display = 'block';
 
-    // Show menu-container for authenticated users
-    const menuContainer = document.querySelector('.menu-container');
-    if (menuContainer) {
-      menuContainer.style.display = 'block';
+    // Show user info in header
+    const userInfo = document.getElementById('userInfo');
+    if (userInfo) {
+      userInfo.style.display = 'flex';
     }
 
     // Show authenticated features
     this.createRoomSection.style.display = 'block';
 
-    // Show lobby functionality
-    if (this.playerNameSection) {
-      this.playerNameSection.style.display = 'block';
-    }
-    if (this.lobbyBrowser) {
-      this.lobbyBrowser.style.display = 'block';
-    }
-    // Show leaderboard for authenticated users
-    if (this.mainLeaderboardSection) {
-      this.mainLeaderboardSection.style.display = 'block';
-    }
-    // Show online members for authenticated users
-    const onlineMembersSection = document.getElementById('onlineMembersSection');
-    if (onlineMembersSection) {
-      onlineMembersSection.style.display = 'block';
+    // Show room creation controls
+    const roomCreationControls = document.getElementById('roomCreationControls');
+    if (roomCreationControls) {
+      roomCreationControls.style.display = 'flex';
     }
 
-    // Update player name input with authenticated username
+    // Show online members card for authenticated users
+    const onlineMembersCard = document.getElementById('onlineMembersCard');
+    if (onlineMembersCard) {
+      onlineMembersCard.style.display = 'block';
+    }
+
+    // Update player name display
+    const playerNameDisplay = document.getElementById('playerNameDisplay');
     const playerNameInput = document.getElementById('playerNameInput');
+    if (playerNameDisplay) {
+      playerNameDisplay.textContent = this.currentUser.username;
+    }
     if (playerNameInput) {
       playerNameInput.value = this.currentUser.username;
       playerNameInput.disabled = true; // Prevent changing when logged in
@@ -236,7 +245,7 @@ class AuthManager {
 
       // Request current online members list
       if (typeof requestOnlineMembers === 'function') {
-        setTimeout(() => requestOnlineMembers(), 100); // Small delay to ensure server processes authentication first
+        setTimeout(() => requestOnlineMembers(), 100);
       }
     }
   }
@@ -403,30 +412,29 @@ class AuthManager {
     this.authScreen.style.display = 'none';
     this.mainMenuScreen.style.display = 'block';
 
-    // Show menu-container for guest users
-    const menuContainer = document.querySelector('.menu-container');
-    if (menuContainer) {
-      menuContainer.style.display = 'block';
-    }
-
     // Hide authenticated features for guests
     this.createRoomSection.style.display = 'none';
 
-    // Show lobby functionality for guests
-    if (this.playerNameSection) {
-      this.playerNameSection.style.display = 'block';
-    }
-    if (this.lobbyBrowser) {
-      this.lobbyBrowser.style.display = 'block';
-    }
-    // Hide main menu leaderboard for guests (they saw it on auth screen)
-    if (this.mainLeaderboardSection) {
-      this.mainLeaderboardSection.style.display = 'none';
+    // Hide room creation controls for guests
+    const roomCreationControls = document.getElementById('roomCreationControls');
+    if (roomCreationControls) {
+      roomCreationControls.style.display = 'none';
     }
 
-    // Enable player name input for guests
+    // Hide online members card for guests
+    const onlineMembersCard = document.getElementById('onlineMembersCard');
+    if (onlineMembersCard) {
+      onlineMembersCard.style.display = 'none';
+    }
+
+    // Update player name display/input for guests
+    const playerNameDisplay = document.getElementById('playerNameDisplay');
     const playerNameInput = document.getElementById('playerNameInput');
+    if (playerNameDisplay) {
+      playerNameDisplay.style.display = 'none';
+    }
     if (playerNameInput) {
+      playerNameInput.style.display = 'block';
       playerNameInput.disabled = false;
       playerNameInput.value = 'Player';
     }

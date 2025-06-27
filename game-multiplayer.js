@@ -1014,7 +1014,13 @@ function updateLobbyList(lobbies) {
   const lobbyList = document.getElementById('lobbyList');
 
   if (lobbies.length === 0) {
-    lobbyList.innerHTML = '<div class="no-lobbies">No active lobbies</div>';
+    lobbyList.innerHTML = `
+      <div class="empty-state">
+        <div class="pulse">🔍</div>
+        <p>No active lobbies found</p>
+        <small>Create a room to get started!</small>
+      </div>
+    `;
     return;
   }
 
@@ -1026,15 +1032,18 @@ function updateLobbyList(lobbies) {
 
     lobbyItem.innerHTML = `
       <div class="lobby-info">
-        <span class="lobby-name">${lobby.id}</span>
-        <span class="player-count">${lobby.playerCount}/8</span>
+        <div class="lobby-name">${lobby.id}</div>
+        <div class="lobby-players">${lobby.playerCount}/8 players</div>
       </div>
-      <div class="lobby-status">${lobby.gameState}</div>
+      <button class="join-btn" ${lobby.playerCount >= 8 ? 'disabled' : ''}>
+        ${lobby.playerCount >= 8 ? 'FULL' : 'JOIN'}
+      </button>
     `;
 
     if (lobby.playerCount < 8) {
-      lobbyItem.style.cursor = 'pointer';
-      lobbyItem.addEventListener('click', () => {
+      const joinBtn = lobbyItem.querySelector('.join-btn');
+      joinBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         const playerName = playerNameInput.value.trim() || 'Player';
         joinRoom(lobby.id, playerName);
       });
@@ -1094,7 +1103,7 @@ function updateLeaderboardDisplay(leaderboard) {
   const leaderboardLists = [leaderboardList, mainLeaderboardList].filter(list => list);
 
   if (leaderboard.length === 0) {
-    const noDataMessage = '<div class="no-leaderboard">No players have completed games yet</div>';
+    const noDataMessage = '<div class="empty-state">No players have completed games yet</div>';
     leaderboardLists.forEach(list => {
       list.innerHTML = noDataMessage;
     });
@@ -1109,22 +1118,22 @@ function updateLeaderboardDisplay(leaderboard) {
       const leaderboardItem = document.createElement('div');
       leaderboardItem.className = `leaderboard-item`;
 
-      // Add special styling for top 3
-      if (rank <= 3) {
-        leaderboardItem.classList.add('top-3', `rank-${rank}`);
-      }
-
-      // Format win rate
-      const winRate = player.win_rate || 0;
+      // Get rank number styling
+      let rankClass = '';
+      if (rank === 1) rankClass = 'gold';
+      else if (rank === 2) rankClass = 'silver';
+      else if (rank === 3) rankClass = 'bronze';
 
       leaderboardItem.innerHTML = `
-        <div class="player-info">
-          <span class="player-rank">#${rank}</span>
-          <span class="player-username">${player.username}</span>
+        <div class="rank-info">
+          <div class="rank-number ${rankClass}">#${rank}</div>
+          <div>
+            <div class="player-name">${player.username.toUpperCase()}</div>
+          </div>
         </div>
         <div class="player-stats">
-          <div class="stat-wins">${player.total_wins} wins</div>
-          <div class="stat-goals">${player.total_goals} goals</div>
+          <div class="stat-line">${player.total_wins} wins</div>
+          <div class="stat-line">${player.total_goals} goals</div>
         </div>
       `;
 
@@ -1137,7 +1146,7 @@ function updateOnlineMembersDisplay(members) {
   if (!onlineMembersList) return;
 
   if (members.length === 0) {
-    onlineMembersList.innerHTML = '<div class="no-members">No online members</div>';
+    onlineMembersList.innerHTML = '<div class="empty-state">No online members</div>';
     return;
   }
 
@@ -1145,7 +1154,7 @@ function updateOnlineMembersDisplay(members) {
 
   members.forEach(member => {
     const memberItem = document.createElement('div');
-    memberItem.className = 'online-member-item';
+    memberItem.className = 'player-item';
 
     // Calculate how long ago they connected
     const connectedTime = new Date(member.connectedAt);
@@ -1154,7 +1163,7 @@ function updateOnlineMembersDisplay(members) {
 
     let timeAgo;
     if (timeDiff < 60) {
-      timeAgo = 'Just now';
+      timeAgo = 'just now';
     } else if (timeDiff < 3600) {
       timeAgo = `${Math.floor(timeDiff / 60)}m ago`;
     } else if (timeDiff < 86400) {
@@ -1164,11 +1173,13 @@ function updateOnlineMembersDisplay(members) {
     }
 
     memberItem.innerHTML = `
-      <div class="member-info">
-        <div class="member-username">${member.username}</div>
-        <div class="member-status">Online ${timeAgo}</div>
+      <div class="player-info">
+        <div class="status-indicator"></div>
+        <div>
+          <div class="player-name">${member.username.toUpperCase()}</div>
+          <div class="player-status">Online ${timeAgo}</div>
+        </div>
       </div>
-      <div class="member-online-indicator"></div>
     `;
 
     onlineMembersList.appendChild(memberItem);

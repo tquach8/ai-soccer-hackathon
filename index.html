@@ -6,54 +6,364 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Blitz Ball</title>
   <style>
-    /* Import Clean Modern Font */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     body {
-      margin: 0;
-      padding: 20px;
-      background:
-        linear-gradient(135deg, #2c5530 0%, #1a3d1f 30%, #0f2912 100%),
-        radial-gradient(circle at 20% 80%, rgba(76, 175, 80, 0.1) 0%, transparent 50%);
-      color: #1a1a1a;
-      font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #2d5016 0%, #4a7c1e 50%, #2d5016 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: white;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 0.5rem 1rem;
+      border-radius: 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .welcome-text {
+      font-weight: 500;
+      color: #333;
+    }
+
+    .logout-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .logout-btn:hover {
+      background: #c0392b;
+      transform: translateY(-1px);
+    }
+
+    .main-content {
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #2c3e50;
+    }
+
+    .card-icon {
+      font-size: 1.2rem;
+    }
+
+    .username-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .username-display {
+      background: #f8f9fa;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: 2px solid #e9ecef;
+      font-family: monospace;
+      font-size: 1rem;
+      color: #495057;
+      margin-bottom: 0.5rem;
+    }
+
+    .username-label {
+      font-size: 0.9rem;
+      color: #6c757d;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .room-creation {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .room-input {
+      flex: 1;
+      padding: 0.75rem;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    .room-input:focus {
+      outline: none;
+      border-color: #28a745;
+      box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+    }
+
+    .create-btn {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .create-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    }
+
+    .lobby-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 12px;
+      margin-bottom: 0.75rem;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .lobby-item:hover {
+      border-color: #28a745;
+      background: #e8f5e8;
+    }
+
+    .lobby-info {
       display: flex;
       flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .lobby-name {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 1.1rem;
+    }
+
+    .lobby-players {
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+
+    .join-btn {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .join-btn:hover {
+      background: #0056b3;
+      transform: translateY(-1px);
+    }
+
+    .player-item {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      min-height: 100vh;
-      position: relative;
-      overflow-x: hidden;
+      padding: 0.75rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
     }
 
-    /* Clean minimal pattern */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background:
-        repeating-linear-gradient(90deg,
-          transparent,
-          transparent 48px,
-          rgba(255, 255, 255, 0.02) 50px),
-        repeating-linear-gradient(0deg,
-          transparent,
-          transparent 48px,
-          rgba(255, 255, 255, 0.02) 50px);
-      pointer-events: none;
-      z-index: -1;
+    .player-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
-    h1 {
-      font-size: 48px;
-      font-weight: 800;
-      color: #ffffff;
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #28a745;
+    }
+
+    .player-name {
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .player-status {
+      font-size: 0.8rem;
+      color: #28a745;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 12px;
+      margin-bottom: 0.75rem;
+      border-left: 4px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .leaderboard-item:nth-child(1) {
+      border-left-color: #ffd700;
+      background: #fff9e6;
+    }
+
+    .leaderboard-item:nth-child(2) {
+      border-left-color: #c0c0c0;
+      background: #f8f8f8;
+    }
+
+    .leaderboard-item:nth-child(3) {
+      border-left-color: #cd7f32;
+      background: #faf5f0;
+    }
+
+    .rank-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .rank-number {
+      background: #007bff;
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .rank-number.gold {
+      background: #ffd700;
+      color: #333;
+    }
+
+    .rank-number.silver {
+      background: #c0c0c0;
+      color: #333;
+    }
+
+    .rank-number.bronze {
+      background: #cd7f32;
+      color: white;
+    }
+
+    .player-stats {
+      text-align: right;
+    }
+
+    .stat-line {
+      font-size: 0.85rem;
+      color: #6c757d;
+      margin-bottom: 0.25rem;
+    }
+
+    .empty-state {
       text-align: center;
-      margin: 20px 0 40px 0;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-      letter-spacing: -1px;
+      color: #6c757d;
+      font-style: italic;
+      padding: 2rem 1rem;
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .main-content {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-content {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        padding: 1rem;
+      }
+
+      .header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+      }
     }
 
     canvas {
@@ -148,7 +458,6 @@
       font-weight: 600;
     }
 
-    /* Team-specific score colors */
     .score-item:first-child .score-value {
       color: #d32f2f;
     }
@@ -584,14 +893,15 @@
     .lobby-item {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding: 16px;
+      align-items: flex-start;
+      padding: 16px 20px;
       margin-bottom: 12px;
       background: rgba(255, 255, 255, 0.8);
       border: 2px solid #e0e0e0;
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s ease;
+      min-height: 60px;
     }
 
     .lobby-item:hover {
@@ -605,18 +915,41 @@
       border-color: #f44336;
     }
 
-    .room-info h4 {
-      margin: 0 0 4px 0;
-      font-size: 16px;
-      font-weight: 600;
-      color: #1a1a1a;
+    .lobby-main-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .room-details {
-      font-size: 12px;
-      color: #757575;
+    .room-header {
+      margin-bottom: 8px;
+    }
+
+    .room-name {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a1a;
       text-transform: uppercase;
       letter-spacing: 1px;
+    }
+
+    .player-count-badge {
+      display: inline-flex;
+      align-items: baseline;
+    }
+
+    .player-count-badge .count {
+      font-size: 14px;
+      font-weight: 700;
+      color: #4caf50;
+    }
+
+    .player-count-badge .max {
+      font-size: 11px;
+      font-weight: 500;
+      color: #757575;
     }
 
     .join-indicator {
@@ -626,6 +959,8 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 1px;
+      align-self: center;
+      margin-left: 16px;
     }
 
     .join-indicator.available {
@@ -1296,20 +1631,25 @@
 </head>
 
 <body>
-  <h1>🚀 Blitz Ball</h1>
-
-  <!-- User Info (shown when logged in) -->
-  <div id="userInfo" class="user-info" style="display: none;">
-    <span id="userDisplay">Welcome, Player!</span>
-    <button id="logoutBtn" class="logout-btn">Logout</button>
-  </div>
-
   <!-- Authentication Screen -->
   <div id="authScreen" class="screen">
-    <div
-      style="display: flex; gap: 30px; max-width: 1400px; margin: 0 auto; align-items: stretch; justify-content: center;">
-      <div class="auth-screen" style="flex: 1; max-width: 500px;">
-        <h2 id="authTitle">Welcome Back</h2>
+    <header class="header">
+      <div class="logo">
+        🚀 Blitz Ball
+      </div>
+      <div class="user-info" style="display: none;">
+        <span class="welcome-text" id="userDisplay">Welcome, Player!</span>
+        <button class="logout-btn" id="logoutBtn">LOGOUT</button>
+      </div>
+    </header>
+
+    <main class="main-content" style="grid-template-columns: 1fr 1fr; max-width: 1000px;">
+      <!-- Auth Card -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">🔐</span>
+          Authentication
+        </div>
 
         <div class="login-benefits">
           <p>🚀 CREATE AN ACCOUNT TO:</p>
@@ -1349,55 +1689,97 @@
         </div>
       </div>
 
-      <div class="leaderboard-section" style="flex: 1; max-width: 450px;">
-        <h3>🏆 Leaderboard</h3>
-        <div class="leaderboard-list" id="leaderboardList">
-          <div class="no-leaderboard">Loading...</div>
+      <!-- Leaderboard Card -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">🏆</span>
+          Leaderboard
+        </div>
+        <div id="leaderboardList">
+          <div class="empty-state">Loading...</div>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 
   <!-- Main Menu Screen -->
   <div id="mainMenuScreen" class="screen" style="display: none;">
-    <div class="main-menu-layout">
-      <div class="menu-container">
+    <header class="header">
+      <div class="logo">
+        🚀 Blitz Ball
+      </div>
+      <div class="user-info" id="userInfo" style="display: none;">
+        <span class="welcome-text" id="userDisplayMain">Welcome, Player!</span>
+        <button class="logout-btn" id="logoutBtnMain">LOGOUT</button>
+      </div>
+    </header>
 
-        <div class="player-name-section">
-          <label for="playerNameInput">Your username:</label>
-          <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="15" value="Player">
+    <main class="main-content">
+      <!-- Username & Room Creation -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">🎮</span>
+          Game Setup
         </div>
 
-        <div class="menu-section" id="createRoomSection" style="display: none;">
-          <h3>🎮 Create Room</h3>
-          <div class="room-input-group">
-            <input type="text" id="roomNameInput" placeholder="Enter room name" maxlength="20">
-            <button id="createRoomBtn" class="menu-btn primary">Create</button>
+        <div class="username-section">
+          <div class="username-label">Your Username:</div>
+          <div class="username-display" id="playerNameDisplay">Player</div>
+          <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="15" value="Player"
+            style="display: none;">
+        </div>
+
+        <div class="card-header" style="margin: 1.5rem 0 1rem 0; font-size: 1rem;" id="createRoomSection">
+          <span class="card-icon">🏠</span>
+          Create Room
+        </div>
+
+        <div class="room-creation" id="roomCreationControls">
+          <input type="text" class="room-input" placeholder="Enter room name" id="roomNameInput" maxlength="20">
+          <button class="create-btn" id="createRoomBtn">CREATE</button>
+        </div>
+      </div>
+
+      <!-- Active Lobbies -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">🎯</span>
+          Active Lobbies
+        </div>
+
+        <div id="lobbyList">
+          <div class="empty-state">
+            <div class="pulse">🔍</div>
+            <p>No active lobbies found</p>
+            <small>Create a room to get started!</small>
           </div>
         </div>
       </div>
 
-      <div class="lobby-browser">
-        <h3 style="margin-top: 0;">🎯 Active Lobbies</h3>
-        <div class="lobby-list" id="lobbyList">
-          <div class="no-lobbies">No active lobbies</div>
+      <!-- Online Members -->
+      <div class="card" id="onlineMembersCard" style="display: none;">
+        <div class="card-header">
+          <span class="card-icon">👥</span>
+          Online Members
+        </div>
+
+        <div id="onlineMembersList">
+          <div class="empty-state">No online members</div>
         </div>
       </div>
 
-      <div class="online-members-section" id="onlineMembersSection" style="display: none;">
-        <h3 style="margin-top: 0;">👥 Online Members</h3>
-        <div class="online-members-list" id="onlineMembersList">
-          <div class="no-members">No online members</div>
+      <!-- Leaderboard -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">🏆</span>
+          Leaderboard
         </div>
-      </div>
 
-      <div class="leaderboard-section">
-        <h3 style="margin-top: 0;">🏆 Leaderboard</h3>
-        <div class="leaderboard-list" id="mainLeaderboardList">
-          <div class="no-leaderboard">Loading...</div>
+        <div id="mainLeaderboardList">
+          <div class="empty-state">Loading...</div>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 
   <!-- Lobby Screen -->
