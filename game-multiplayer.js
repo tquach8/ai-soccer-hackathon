@@ -109,6 +109,9 @@ const lobbyList = document.getElementById('lobbyList');
 const leaderboardList = document.getElementById('leaderboardList');
 const mainLeaderboardList = document.getElementById('mainLeaderboardList');
 
+// Online members elements
+const onlineMembersList = document.getElementById('onlineMembersList');
+
 // Lobby elements
 const startGameBtn = document.getElementById('startGameBtn');
 const backToLobbyBtn = document.getElementById('backToLobbyBtn');
@@ -237,6 +240,10 @@ function initNetwork() {
 
   socket.on('error', (errorData) => {
     alert(errorData.message);
+  });
+
+  socket.on('onlineMembersUpdate', (members) => {
+    updateOnlineMembersDisplay(members);
   });
 }
 
@@ -391,9 +398,10 @@ function showMainMenuScreen() {
     gameScreen.style.display = 'none';
     winningScreen.style.display = 'none';
 
-    // Refresh leaderboard when showing main menu
+    // Refresh data when showing main menu
     setTimeout(() => {
       fetchLeaderboard();
+      requestOnlineMembers(); // Request fresh online members for authenticated users
     }, 100);
   }
 }
@@ -1052,6 +1060,12 @@ function requestLobbyList() {
   }
 }
 
+function requestOnlineMembers() {
+  if (socket && connected) {
+    socket.emit('requestOnlineMembers');
+  }
+}
+
 // Leaderboard management
 async function fetchLeaderboard() {
   try {
@@ -1116,6 +1130,48 @@ function updateLeaderboardDisplay(leaderboard) {
 
       list.appendChild(leaderboardItem);
     });
+  });
+}
+
+function updateOnlineMembersDisplay(members) {
+  if (!onlineMembersList) return;
+
+  if (members.length === 0) {
+    onlineMembersList.innerHTML = '<div class="no-members">No online members</div>';
+    return;
+  }
+
+  onlineMembersList.innerHTML = '';
+
+  members.forEach(member => {
+    const memberItem = document.createElement('div');
+    memberItem.className = 'online-member-item';
+
+    // Calculate how long ago they connected
+    const connectedTime = new Date(member.connectedAt);
+    const now = new Date();
+    const timeDiff = Math.floor((now - connectedTime) / 1000); // seconds
+
+    let timeAgo;
+    if (timeDiff < 60) {
+      timeAgo = 'Just now';
+    } else if (timeDiff < 3600) {
+      timeAgo = `${Math.floor(timeDiff / 60)}m ago`;
+    } else if (timeDiff < 86400) {
+      timeAgo = `${Math.floor(timeDiff / 3600)}h ago`;
+    } else {
+      timeAgo = `${Math.floor(timeDiff / 86400)}d ago`;
+    }
+
+    memberItem.innerHTML = `
+      <div class="member-info">
+        <div class="member-username">${member.username}</div>
+        <div class="member-status">Online ${timeAgo}</div>
+      </div>
+      <div class="member-online-indicator"></div>
+    `;
+
+    onlineMembersList.appendChild(memberItem);
   });
 }
 

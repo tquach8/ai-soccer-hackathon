@@ -27,6 +27,12 @@ class AuthManager {
       this.mainMenuScreen.style.display = 'none';
     }
 
+    // Explicitly hide menu-container to prevent it from showing on auth screen
+    const menuContainer = document.querySelector('.menu-container');
+    if (menuContainer) {
+      menuContainer.style.display = 'none';
+    }
+
     // Hide specific authenticated features within main menu
     if (this.createRoomSection) {
       this.createRoomSection.style.display = 'none';
@@ -191,6 +197,12 @@ class AuthManager {
     this.authScreen.style.display = 'none';
     this.mainMenuScreen.style.display = 'block';
 
+    // Show menu-container for authenticated users
+    const menuContainer = document.querySelector('.menu-container');
+    if (menuContainer) {
+      menuContainer.style.display = 'block';
+    }
+
     // Show authenticated features
     this.createRoomSection.style.display = 'block';
 
@@ -205,6 +217,11 @@ class AuthManager {
     if (this.mainLeaderboardSection) {
       this.mainLeaderboardSection.style.display = 'block';
     }
+    // Show online members for authenticated users
+    const onlineMembersSection = document.getElementById('onlineMembersSection');
+    if (onlineMembersSection) {
+      onlineMembersSection.style.display = 'block';
+    }
 
     // Update player name input with authenticated username
     const playerNameInput = document.getElementById('playerNameInput');
@@ -212,9 +229,24 @@ class AuthManager {
       playerNameInput.value = this.currentUser.username;
       playerNameInput.disabled = true; // Prevent changing when logged in
     }
+
+    // Notify server that user is authenticated (for online members tracking)
+    if (typeof socket !== 'undefined' && socket) {
+      socket.emit('userAuthenticated', { username: this.currentUser.username });
+
+      // Request current online members list
+      if (typeof requestOnlineMembers === 'function') {
+        setTimeout(() => requestOnlineMembers(), 100); // Small delay to ensure server processes authentication first
+      }
+    }
   }
 
   logout() {
+    // Notify server that user logged out (remove from online members)
+    if (typeof socket !== 'undefined' && socket) {
+      socket.emit('userLoggedOut');
+    }
+
     this.token = null;
     this.currentUser = null;
     this.isGuest = false;
@@ -243,6 +275,12 @@ class AuthManager {
     // Hide authenticated features
     this.createRoomSection.style.display = 'none';
 
+    // Explicitly hide menu-container on logout
+    const menuContainer = document.querySelector('.menu-container');
+    if (menuContainer) {
+      menuContainer.style.display = 'none';
+    }
+
     // Hide lobby functionality
     if (this.playerNameSection) {
       this.playerNameSection.style.display = 'none';
@@ -253,6 +291,11 @@ class AuthManager {
     // Hide main menu leaderboard
     if (this.mainLeaderboardSection) {
       this.mainLeaderboardSection.style.display = 'none';
+    }
+    // Hide online members section
+    const onlineMembersSection = document.getElementById('onlineMembersSection');
+    if (onlineMembersSection) {
+      onlineMembersSection.style.display = 'none';
     }
 
     // Reset form
@@ -278,25 +321,25 @@ class AuthManager {
       this.authSwitchText.textContent = "Don't have an account?";
       this.authSwitchBtn.textContent = 'Register';
 
-      // Login mode styling - cyan theme
+      // Login mode styling - green sports theme
       authScreenElement.classList.remove('register-mode');
-      authScreenElement.style.borderColor = '#00ffff';
-      authScreenElement.style.boxShadow = '0 0 40px rgba(0, 255, 255, 0.3)';
-      this.authTitle.style.color = '#00ffff';
-      this.authTitle.style.textShadow = '0 0 20px rgba(0, 255, 255, 0.8)';
-      this.authSubmitBtn.style.background = 'linear-gradient(45deg, #00ffff, #ff00ff)';
-      this.authSubmitBtn.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
+      authScreenElement.style.borderColor = '#4caf50';
+      authScreenElement.style.boxShadow = '0 0 40px rgba(76, 175, 80, 0.3)';
+      this.authTitle.style.color = '#4caf50';
+      this.authTitle.style.textShadow = '0 0 20px rgba(76, 175, 80, 0.8)';
+      this.authSubmitBtn.style.background = 'linear-gradient(135deg, #4caf50, #45a049)';
+      this.authSubmitBtn.style.boxShadow = '0 4px 16px rgba(76, 175, 80, 0.3)';
 
-      // Reset hover effects for login mode
+      // Login hover effects
       this.authSubmitBtn.onmouseenter = () => {
-        this.authSubmitBtn.style.background = 'linear-gradient(45deg, #ff00ff, #00ffff)';
-        this.authSubmitBtn.style.transform = 'translateY(-3px)';
-        this.authSubmitBtn.style.boxShadow = '0 8px 35px rgba(255, 0, 255, 0.6)';
+        this.authSubmitBtn.style.background = 'linear-gradient(135deg, #45a049, #4caf50)';
+        this.authSubmitBtn.style.transform = 'translateY(-2px)';
+        this.authSubmitBtn.style.boxShadow = '0 6px 20px rgba(76, 175, 80, 0.4)';
       };
       this.authSubmitBtn.onmouseleave = () => {
-        this.authSubmitBtn.style.background = 'linear-gradient(45deg, #00ffff, #ff00ff)';
+        this.authSubmitBtn.style.background = 'linear-gradient(135deg, #4caf50, #45a049)';
         this.authSubmitBtn.style.transform = 'translateY(0)';
-        this.authSubmitBtn.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
+        this.authSubmitBtn.style.boxShadow = '0 4px 16px rgba(76, 175, 80, 0.3)';
       };
 
     } else {
@@ -305,25 +348,25 @@ class AuthManager {
       this.authSwitchText.textContent = 'Already have an account?';
       this.authSwitchBtn.textContent = 'Back to Login';
 
-      // Register mode styling - green theme with indicator
+      // Register mode styling - green sports theme
       authScreenElement.classList.add('register-mode');
-      authScreenElement.style.borderColor = '#00ff88';
-      authScreenElement.style.boxShadow = '0 0 40px rgba(0, 255, 136, 0.4)';
-      this.authTitle.style.color = '#00ff88';
-      this.authTitle.style.textShadow = '0 0 20px rgba(0, 255, 136, 0.8)';
-      this.authSubmitBtn.style.background = 'linear-gradient(45deg, #00ff88, #44ff44)';
-      this.authSubmitBtn.style.boxShadow = '0 0 25px rgba(0, 255, 136, 0.5)';
+      authScreenElement.style.borderColor = '#4caf50';
+      authScreenElement.style.boxShadow = '0 0 40px rgba(76, 175, 80, 0.3)';
+      this.authTitle.style.color = '#4caf50';
+      this.authTitle.style.textShadow = '0 0 20px rgba(76, 175, 80, 0.8)';
+      this.authSubmitBtn.style.background = 'linear-gradient(135deg, #4caf50, #45a049)';
+      this.authSubmitBtn.style.boxShadow = '0 4px 16px rgba(76, 175, 80, 0.3)';
 
-      // Custom hover effects for register mode
+      // Register hover effects
       this.authSubmitBtn.onmouseenter = () => {
-        this.authSubmitBtn.style.background = 'linear-gradient(45deg, #44ff44, #00ff88)';
-        this.authSubmitBtn.style.transform = 'translateY(-3px)';
-        this.authSubmitBtn.style.boxShadow = '0 8px 35px rgba(68, 255, 68, 0.6)';
+        this.authSubmitBtn.style.background = 'linear-gradient(135deg, #45a049, #4caf50)';
+        this.authSubmitBtn.style.transform = 'translateY(-2px)';
+        this.authSubmitBtn.style.boxShadow = '0 6px 20px rgba(76, 175, 80, 0.4)';
       };
       this.authSubmitBtn.onmouseleave = () => {
-        this.authSubmitBtn.style.background = 'linear-gradient(45deg, #00ff88, #44ff44)';
+        this.authSubmitBtn.style.background = 'linear-gradient(135deg, #4caf50, #45a049)';
         this.authSubmitBtn.style.transform = 'translateY(0)';
-        this.authSubmitBtn.style.boxShadow = '0 0 25px rgba(0, 255, 136, 0.5)';
+        this.authSubmitBtn.style.boxShadow = '0 4px 16px rgba(76, 175, 80, 0.3)';
       };
     }
 
@@ -341,15 +384,15 @@ class AuthManager {
     if (authScreenElement) {
       if (this.isLoginMode) {
         authScreenElement.classList.remove('register-mode');
-        authScreenElement.style.borderColor = '#00ffff';
-        authScreenElement.style.boxShadow = '0 0 40px rgba(0, 255, 255, 0.3)';
+        authScreenElement.style.borderColor = '#4caf50';
+        authScreenElement.style.boxShadow = '0 0 40px rgba(76, 175, 80, 0.3)';
         if (this.authTitle) {
-          this.authTitle.style.color = '#00ffff';
-          this.authTitle.style.textShadow = '0 0 20px rgba(0, 255, 255, 0.8)';
+          this.authTitle.style.color = '#4caf50';
+          this.authTitle.style.textShadow = '0 0 20px rgba(76, 175, 80, 0.8)';
         }
         if (this.authSubmitBtn) {
-          this.authSubmitBtn.style.background = 'linear-gradient(45deg, #00ffff, #ff00ff)';
-          this.authSubmitBtn.style.boxShadow = '0 0 25px rgba(0, 255, 255, 0.4)';
+          this.authSubmitBtn.style.background = 'linear-gradient(135deg, #4caf50, #45a049)';
+          this.authSubmitBtn.style.boxShadow = '0 4px 16px rgba(76, 175, 80, 0.3)';
         }
       }
     }
@@ -359,6 +402,12 @@ class AuthManager {
     this.isGuest = true;
     this.authScreen.style.display = 'none';
     this.mainMenuScreen.style.display = 'block';
+
+    // Show menu-container for guest users
+    const menuContainer = document.querySelector('.menu-container');
+    if (menuContainer) {
+      menuContainer.style.display = 'block';
+    }
 
     // Hide authenticated features for guests
     this.createRoomSection.style.display = 'none';

@@ -148,6 +148,7 @@ function getMapDimensions(playerCount) {
 
 // Game state
 const gameRooms = new Map();
+const onlineUsers = new Map(); // Track online authenticated users: socketId -> {username, socketId, connectedAt}
 
 class GameRoom {
   constructor(roomId, ownerId) {
@@ -170,7 +171,9 @@ class GameRoom {
       vx: 0,
       vy: 0,
       radius: 10,
-      lastTouchedBy: null // Track who last touched the ball
+      lastTouchedBy: null, // Track who last touched the ball
+      lastShooter: null,   // Track who last actively hit the ball (not just collision)
+      lastShootTime: 0     // When the last shot occurred
     };
 
     // Boost pads - will be generated dynamically based on map size
@@ -270,7 +273,14 @@ class GameRoom {
     this.ball.y = dimensions.height / 2;
     this.ball.vx = 0;
     this.ball.vy = 0;
+
+    if (this.ball.lastTouchedBy) {
+      const lastPlayer = this.players.get(this.ball.lastTouchedBy);
+      console.log(`Clearing ball tracking (lastTouchedBy was ${lastPlayer ? lastPlayer.name : 'unknown player'})`);
+    }
     this.ball.lastTouchedBy = null; // Clear last touched
+    this.ball.lastShooter = null;   // Clear last shooter
+    this.ball.lastShootTime = 0;    // Clear shoot time
   }
 
   resetPlayers() {
@@ -476,7 +486,10 @@ class GameRoom {
 
     if (dist < minDistance) {
       // Track who touched the ball
-      this.ball.lastTouchedBy = player.id;
+      if (this.ball.lastTouchedBy !== player.id) {
+        console.log(`Ball touched by ${player.name} (${player.team} team) - collision`);
+        this.ball.lastTouchedBy = player.id;
+      }
 
       // End kickoff if the kickoff team touches the ball
       if (this.kickoffActive && player.team === this.kickoffTeam) {
@@ -518,8 +531,11 @@ class GameRoom {
     const hitRange = 20 + this.ball.radius + 10;
 
     if (dist < hitRange) {
-      // Track who hit the ball
+      // Track who hit the ball (this is an intentional shot)
+      console.log(`Ball HIT by ${player.name} (${player.team} team) - active hit`);
       this.ball.lastTouchedBy = player.id;
+      this.ball.lastShooter = player.id;
+      this.ball.lastShootTime = Date.now();
 
       // End kickoff if the kickoff team touches the ball
       if (this.kickoffActive && player.team === this.kickoffTeam) {
@@ -589,12 +605,37 @@ class GameRoom {
       goalScored = true;
       scoringTeam = 'blue';
 
-      // Track individual goal if someone touched the ball
-      if (this.ball.lastTouchedBy && this.players.has(this.ball.lastTouchedBy)) {
-        const scorer = this.players.get(this.ball.lastTouchedBy);
-        if (scorer.team === 'blue') {
-          this.playerGoals.set(this.ball.lastTouchedBy, (this.playerGoals.get(this.ball.lastTouchedBy) || 0) + 1);
+      console.log(`Goal scored! Blue team scores. Ball lastTouchedBy: ${this.ball.lastTouchedBy}, lastShooter: ${this.ball.lastShooter}`);
+
+      // Determine who should get credit for the goal
+      let creditPlayer = null;
+      let creditReason = '';
+
+      // If there was a recent shot (within 5 seconds), credit the shooter
+      const timeSinceShot = Date.now() - this.ball.lastShootTime;
+      if (this.ball.lastShooter && this.players.has(this.ball.lastShooter) && timeSinceShot < 5000) {
+        creditPlayer = this.players.get(this.ball.lastShooter);
+        creditReason = 'shot';
+      }
+      // Otherwise, credit whoever last touched the ball
+      else if (this.ball.lastTouchedBy && this.players.has(this.ball.lastTouchedBy)) {
+        creditPlayer = this.players.get(this.ball.lastTouchedBy);
+        creditReason = 'touch';
+      }
+
+      if (creditPlayer) {
+        console.log(`Credit determined: ${creditPlayer.name} (${creditPlayer.team} team) - reason: ${creditReason}`);
+
+        // Give credit to the player if they're on the scoring team
+        if (creditPlayer.team === 'blue') {
+          const currentGoals = this.playerGoals.get(creditPlayer.id) || 0;
+          this.playerGoals.set(creditPlayer.id, currentGoals + 1);
+          console.log(`${creditPlayer.name} credited with goal! New total: ${currentGoals + 1}`);
+        } else {
+          console.log(`${creditPlayer.name} from ${creditPlayer.team} team accidentally scored for blue team - no credit given`);
         }
+      } else {
+        console.log('No player to credit for this goal');
       }
 
       // Set kickoff for red team (they didn't score)
@@ -610,12 +651,37 @@ class GameRoom {
       goalScored = true;
       scoringTeam = 'red';
 
-      // Track individual goal if someone touched the ball
-      if (this.ball.lastTouchedBy && this.players.has(this.ball.lastTouchedBy)) {
-        const scorer = this.players.get(this.ball.lastTouchedBy);
-        if (scorer.team === 'red') {
-          this.playerGoals.set(this.ball.lastTouchedBy, (this.playerGoals.get(this.ball.lastTouchedBy) || 0) + 1);
+      console.log(`Goal scored! Red team scores. Ball lastTouchedBy: ${this.ball.lastTouchedBy}, lastShooter: ${this.ball.lastShooter}`);
+
+      // Determine who should get credit for the goal
+      let creditPlayer = null;
+      let creditReason = '';
+
+      // If there was a recent shot (within 5 seconds), credit the shooter
+      const timeSinceShot = Date.now() - this.ball.lastShootTime;
+      if (this.ball.lastShooter && this.players.has(this.ball.lastShooter) && timeSinceShot < 5000) {
+        creditPlayer = this.players.get(this.ball.lastShooter);
+        creditReason = 'shot';
+      }
+      // Otherwise, credit whoever last touched the ball
+      else if (this.ball.lastTouchedBy && this.players.has(this.ball.lastTouchedBy)) {
+        creditPlayer = this.players.get(this.ball.lastTouchedBy);
+        creditReason = 'touch';
+      }
+
+      if (creditPlayer) {
+        console.log(`Credit determined: ${creditPlayer.name} (${creditPlayer.team} team) - reason: ${creditReason}`);
+
+        // Give credit to the player if they're on the scoring team
+        if (creditPlayer.team === 'red') {
+          const currentGoals = this.playerGoals.get(creditPlayer.id) || 0;
+          this.playerGoals.set(creditPlayer.id, currentGoals + 1);
+          console.log(`${creditPlayer.name} credited with goal! New total: ${currentGoals + 1}`);
+        } else {
+          console.log(`${creditPlayer.name} from ${creditPlayer.team} team accidentally scored for red team - no credit given`);
         }
+      } else {
+        console.log('No player to credit for this goal');
       }
 
       // Set kickoff for blue team (they didn't score)
@@ -624,6 +690,15 @@ class GameRoom {
     }
 
     if (goalScored) {
+      // Log all current player goals for debugging
+      console.log('Current player goal counts:');
+      this.playerGoals.forEach((goals, playerId) => {
+        const player = this.players.get(playerId);
+        if (player) {
+          console.log(`  ${player.name}: ${goals} goals`);
+        }
+      });
+
       // Check for win condition (first to 3 goals)
       if (this.scores.red >= 3 || this.scores.blue >= 3) {
         this.endGame(scoringTeam);
@@ -799,9 +874,65 @@ function broadcastLobbyList() {
   io.emit('lobbyListUpdate', lobbies);
 }
 
+// Broadcast online members list to all authenticated clients
+function broadcastOnlineMembers() {
+  const members = Array.from(onlineUsers.values()).map(user => ({
+    username: user.username,
+    connectedAt: user.connectedAt
+  }));
+
+  console.log('Broadcasting online members:', members);
+
+  // Only send to authenticated users
+  for (const [socketId, user] of onlineUsers) {
+    io.to(socketId).emit('onlineMembersUpdate', members);
+  }
+}
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
+
+  // Handle user authentication status
+  socket.on('userAuthenticated', (userData) => {
+    const { username } = userData;
+
+    // Add user to online list
+    onlineUsers.set(socket.id, {
+      username: username,
+      socketId: socket.id,
+      connectedAt: new Date().toISOString()
+    });
+
+    console.log(`User ${username} authenticated with socket ${socket.id}`);
+
+    // Broadcast updated online members
+    broadcastOnlineMembers();
+  });
+
+  // Handle requesting online members list
+  socket.on('requestOnlineMembers', () => {
+    // Only send to authenticated users
+    if (onlineUsers.has(socket.id)) {
+      const members = Array.from(onlineUsers.values()).map(user => ({
+        username: user.username,
+        connectedAt: user.connectedAt
+      }));
+      socket.emit('onlineMembersUpdate', members);
+    }
+  });
+
+  // Handle user logout (remove from online list but keep socket connected)
+  socket.on('userLoggedOut', () => {
+    if (onlineUsers.has(socket.id)) {
+      const user = onlineUsers.get(socket.id);
+      console.log(`User ${user.username} logged out (socket still connected)`);
+      onlineUsers.delete(socket.id);
+
+      // Broadcast updated online members
+      broadcastOnlineMembers();
+    }
+  });
 
   socket.on('joinRoom', (data) => {
     const { roomId, playerData } = data;
@@ -975,6 +1106,16 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log(`Player disconnected: ${socket.id}`);
+
+    // Remove user from online list if they were authenticated
+    if (onlineUsers.has(socket.id)) {
+      const user = onlineUsers.get(socket.id);
+      console.log(`User ${user.username} went offline`);
+      onlineUsers.delete(socket.id);
+
+      // Broadcast updated online members
+      broadcastOnlineMembers();
+    }
 
     // Remove player from all rooms
     for (const room of gameRooms.values()) {
