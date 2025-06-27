@@ -252,7 +252,7 @@ function updateLobbyFromServer(roomState) {
   console.log('Updating lobby with room state:', roomState);
 
   // Clear all slots first
-  document.querySelectorAll('.player-slot').forEach(slot => {
+  document.querySelectorAll('.player-slot-modern').forEach(slot => {
     slot.classList.remove('filled');
     slot.classList.add('empty');
     slot.querySelector('.slot-text').textContent = 'Click to Join';
@@ -294,6 +294,9 @@ function updateLobbyFromServer(roomState) {
   // Update unassigned players list
   updateUnassignedPlayersList(unassignedPlayersData, roomState.ownerId);
 
+  // Update team counters
+  updateTeamCounters(redPlayers.length, bluePlayers.length);
+
   // Update start button - only show to owner and enable if we have players on each team
   const isOwner = roomState.ownerId === myPlayerId;
   const playersOnTeams = redPlayers.length + bluePlayers.length;
@@ -306,34 +309,35 @@ function updateLobbyFromServer(roomState) {
     startGameBtn.style.display = 'none';
   }
 
-  const lobbyInfo = document.querySelector('.lobby-info');
-  if (isOwner) {
-    if (canStartGame) {
-      lobbyInfo.textContent = `You can start the game! ${playersOnTeams} players on teams, ${unassignedPlayersData.length} waiting`;
-    } else if (playersOnTeams === 0) {
-      lobbyInfo.textContent = 'Waiting for players to join teams...';
+  const lobbyStatus = document.getElementById('lobbyStatus');
+  if (lobbyStatus) {
+    if (isOwner) {
+      if (canStartGame) {
+        lobbyStatus.textContent = `You can start the game! ${playersOnTeams} players on teams, ${unassignedPlayersData.length} waiting`;
+      } else if (playersOnTeams === 0) {
+        lobbyStatus.textContent = 'Waiting for players to join teams...';
+      } else {
+        lobbyStatus.textContent = `Need players on both teams to start! Red: ${redPlayers.length}, Blue: ${bluePlayers.length}`;
+      }
     } else {
-      lobbyInfo.textContent = `Need players on both teams to start! Red: ${redPlayers.length}, Blue: ${bluePlayers.length}`;
-    }
-  } else {
-    const ownerPlayer = roomState.players.find(p => p.id === roomState.ownerId);
-    const ownerName = ownerPlayer ? ownerPlayer.name : 'Owner';
-    if (canStartGame) {
-      lobbyInfo.textContent = `Waiting for ${ownerName} 👑 to start the game... (${playersOnTeams} on teams, ${unassignedPlayersData.length} waiting)`;
-    } else {
-      lobbyInfo.textContent = `Waiting for players on both teams... Red: ${redPlayers.length}, Blue: ${bluePlayers.length}`;
+      const ownerPlayer = roomState.players.find(p => p.id === roomState.ownerId);
+      const ownerName = ownerPlayer ? ownerPlayer.name : 'Owner';
+      if (canStartGame) {
+        lobbyStatus.textContent = `Waiting for ${ownerName} 👑 to start the game... (${playersOnTeams} on teams, ${unassignedPlayersData.length} waiting)`;
+      } else {
+        lobbyStatus.textContent = `Waiting for players on both teams... Red: ${redPlayers.length}, Blue: ${bluePlayers.length}`;
+      }
     }
   }
 }
 
 function updateUnassignedPlayersList(unassignedPlayersData, ownerId) {
-  // Show/hide the unassigned players section
-  if (unassignedPlayersData.length > 0) {
-    unassignedPlayers.style.display = 'block';
+  // Clear and populate the list
+  unassignedPlayerList.innerHTML = '';
 
-    // Clear and populate the list
-    unassignedPlayerList.innerHTML = '';
-
+  if (unassignedPlayersData.length === 0) {
+    unassignedPlayerList.innerHTML = '<div class="empty-state">All players have joined teams</div>';
+  } else {
     unassignedPlayersData.forEach(player => {
       const playerElement = document.createElement('div');
       playerElement.className = 'unassigned-player';
@@ -348,8 +352,18 @@ function updateUnassignedPlayersList(unassignedPlayersData, ownerId) {
       playerElement.textContent = displayName;
       unassignedPlayerList.appendChild(playerElement);
     });
-  } else {
-    unassignedPlayers.style.display = 'none';
+  }
+}
+
+function updateTeamCounters(redCount, blueCount) {
+  const redCounter = document.getElementById('redTeamCounter');
+  const blueCounter = document.getElementById('blueTeamCounter');
+
+  if (redCounter) {
+    redCounter.textContent = `🔴 Red Team: ${redCount}/4`;
+  }
+  if (blueCounter) {
+    blueCounter.textContent = `🔵 Blue Team: ${blueCount}/4`;
   }
 }
 
@@ -1241,8 +1255,8 @@ function leaveRoom() {
 
 // Lobby functions
 function initializeLobby() {
-  // Add click listeners to player slots
-  document.querySelectorAll('.player-slot').forEach(slot => {
+  // Add click listeners to player slots using modern selector
+  document.querySelectorAll('.player-slot-modern').forEach(slot => {
     slot.addEventListener('click', handleSlotClick);
   });
 
