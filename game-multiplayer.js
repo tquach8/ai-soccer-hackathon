@@ -1031,7 +1031,7 @@ function updateLobbyList(lobbies) {
 
     lobbyItem.innerHTML = `
       <div class="lobby-info">
-        <div class="lobby-name">${lobby.id}</div>
+        <div class="lobby-name">${lobby.id.toUpperCase()}</div>
         <div class="lobby-players">${lobby.playerCount}/8 players</div>
       </div>
       <button class="join-btn" ${lobby.playerCount >= 8 ? 'disabled' : ''}>
